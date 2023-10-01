@@ -1,197 +1,157 @@
-## Encryption software based on my ransomware lmfao
+## Encryption software based on my ransomware lmao
 ## This code is an absolute abomination lol I have
 ## no idea if this works or not. 
-import os, threading, subprocess, cffi, ctypes, win32api, hashlib, webbrowser
+import os, threading, subprocess, cffi, ctypes, hashlib, webbrowser, sys, json
 import tkinter as tk
-from Crypto.Cipher import AES, ChaCha20, PKCS1_OAEP
+from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
-from Crypto.PublicKey import RSA
 from tkinter import messagebox
 from tkinter import filedialog ## Why do we have to import this seperatly if we import everything? like how stupid is this
 
-## Currently AES-CTR-256 and CHACHA20
-## are planned to be supported
+## Currently AES-256-CTR is planned to be supported
 ## So we use RSA to encrypt the metadata of the file
 ## and it also encrypts the encryption key used to 
 ## encrypt the files. Wow that was a mouth full. 
 
-## Encryptor
-def encrypt_file(path_to_file, encryption_mode,  rsa_key_pub, rsa_key_size, delete_og_file) :
-    ## We have a checker to make sure that
-    ## the data inputted is correct
-    datalist = []
+## Here is the defining that comes before everything else
+def is_admin():
+    global is_user_admin
+    try:
+        if ctypes.windll.shell32.IsUserAnAdmin() == '1' :
+            is_user_admin = True
+            return True
+        else :
+            is_user_admin = False
+            return False
+    except:
+        is_user_admin = False
+        return False
 
-    global cryptographic_library_version 
-    cryptographic_library_version = "2023-09-09.rc1.gpc_main"
+## For the like 1 other person that will ever see this program
+## This segment of code requests for admin privilidges.  
+def request_uac_elevation():
+    global is_user_admin
+    if is_user_admin == False:
+        try :
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+            if is_admin() :
+                is_user_admin = True
+                return True
+            else :
+                return False
+        except :
+            is_user_admin = False
+            return False
+    else: return True
+
+## Encryptor/decryptor object
+class enc_dec_obj() :
+
+    cryptographic_library_version = "2023-09-30.gpc_main.rc2.v01"
     
+    admin = is_admin()
 
-    ## We raise an exception if the RSA key is less than 3072 
-    ## bits long. This is not done for security but its security
-    ## improvements are welcomed. This is done because the
-    ## amount of data that RSA-2048 can encrypt is only about 256
-    ## but if the key is 3072 it means that we can encrypt 384-bytes
-    ## of data which should be enough for what we're doing here.
-    rsa_key_pub = RSA.import_key(rsa_key_pub)
-    if rsa_key_pub.can_encrypt() is False :
-        raise Exception("The inputted RSA cannot be used to encrypt files, please select or generate another key.")
-    if rsa_key_size < 3072 :
-        raise Exception("RSA key too small! RSA keys of 3072 and larger keys are supported. This is due to the file header being longer than RSA 2048's maximum encryption length.")
+    def __init__(self) -> None:
+        pass
 
-    try :
-        with open(path_to_file, 'rb') as plain_file :
-            plain_text = plain_file.read()
-        file_size = os.path.getsize(path_to_file)
-    except FileNotFoundError :
-        raise FileNotFoundError("The requested file for encryption does not exist.")
-    
-    file_name = os.path.basename(path_to_file)
-
-    ## Generating the encryption key
-    encryption_key = get_random_bytes(32)
-
-    ## If AES is used
-    if 'AES' in encryption_mode :
-        cipher = AES.new(encryption_key, AES.MODE_CTR)
-        nonce = cipher.nonce
-
-    ## Elif CHACHA20 is used
-    elif 'CHACHA' in encryption_mode :
-
-        ## CHACHA20-RFC-7539 can only encrypt 256 GiBs worth of data due to using a 96-bit nounce.
-        ## This will probably not be an issue for most people but it is important to catch it when
-        ## it does happen.
-        if file_size >= 2199023255552 :
-            raise OverflowError("CHACHA20 in its RFC-7539 compliant configuration uses a 96-bit nounce, which limits the amount of data it can encrypt to 256 GiB which is ≈ 256 GB")
-
-        ## We use a 12-byte nonce to increase security and
-        ## comply with RFC-7539 which requires a 12-byte
-        ## nonce for improved security. Which limits us to
-        ## only 256 GiBs worth of data we can encrypt.
-        nonce = get_random_bytes(12)
-        cipher = ChaCha20.new(key=encryption_key, nonce=nonce)
-
-        ## This is the part where we encrypt the encryption keys
-        ## with the RSA keys to make sure that it stays secure in
-        ## transit.
-        ## Order of the list
-        ## [Encryption key, nonce/iv, encryption mode, file size, file hash after encryption, file hash before encryption, hash algorithm]
-        ## Example datalist
-        ## ['256-bit encryption key', '96-bit IV', 'AES-256-CTR', 12345678910, 'Some-generic-SHA512 hash', 'Another-generic-SHA512 hash', 'SHA2-512']
-    none_enc_hash = hash_object(plain_text)
-    plain_text = cipher.encrypt(plain_text)
-    datalist.append(encryption_key)
-    datalist.append(nonce)
-    datalist.append(encryption_mode)
-    datalist.append(file_size)
-    datalist.append(hash_object(plain_text))
-    datalist.append(none_enc_hash)
-    datalist.append(file_name)
-
-    cipher = PKCS1_OAEP.new(rsa_key_pub)
-    datalist = cipher.encrypt(datalist)
-
-    if rsa_key_size >= 100000 :
-        raise ValueError("RSA key too long, we recommend using 4096-bit to 8192-bit RSA keys for encryption.")
-    header_length = len(datalist)
-    header_length = '0' + str(header_length)
-
-    ## We overwrite the original non-encrypted
-    ## file because people can recover it with
-    ## special software. But by re-writting
-    ## it with encrypted data, they will only 
-    ## see the encrypted data. 
-    if delete_og_file == True :
-        with open(path_to_file, 'wb') as encrypted_file :
-            encrypted_file.write(b'Hello, World!:-)')
-            encrypted_file.write(bytes(header_length))
-            encrypted_file.write(datalist)
-            encrypted_file.write(plain_text)
-        os.rename(path_to_file, path_to_file + '.encr')
-
-    elif delete_og_file == False :
-        with open(path_to_file + '.encr', 'wb') as encrypted_file :
-            encrypted_file.write(b'Hello, World!:-)')
-            encrypted_file.write(bytes(header_length))
-            encrypted_file.write(datalist)
-            encrypted_file.write(plain_text)
+    def encrypt_file(self, path_to_file, delete_og_file) :
+        ## We have a checker to make sure that
+        ## the data inputted is correct
+        datalist = []
+        try :
+            with open(path_to_file, 'rb') as plain_file :
+                plain_text = plain_file.read()
+            #file_size = os.path.getsize(path_to_file)
+        except FileNotFoundError :
+            raise FileNotFoundError("The requested file for encryption does not exist.")
         
-## The formatt of the encrypted file should be :
-## File head/Hello World!
-## RSA key size
-## RSA encrypted datalist
-## The encrypted data
+        ## Generating the encryption key
+        encryption_key = get_random_bytes(32)
 
-def decrypt_file(path_to_file, rsa_key, delete_og_file) :
-    ## Basically we are doing the excapt same thing as the
-    ## encrypt_file() function except its backwards and it
-    ## requires way less inputs inorder to get an output
-    try :
-        with open(path_to_file, 'rb') as plain_file :
-            head = plain_file.read(16)
+        cipher = AES.new(encryption_key, AES.MODE_CTR, nonce=get_random_bytes(12))
 
-            if head != b'Hello, World!:-)' :
-                raise ValueError('The file has been corrupted or edited.')
-
-            rsa_key_size = plain_file.read(5)
-            rsa_key_size = int(rsa_key_size)
-            datalist = plain_file.read(rsa_key_size)
-            cipher_text = plain_file.read()
-    except FileNotFoundError :
-        raise FileNotFoundError("The requested file for encryption does not exist.")
-    
-    cipher = PKCS1_OAEP.new(rsa_key)
-
-    datalist = cipher.decrypt(datalist)
-    datalist = list(datalist)
-    encryption_key = datalist[0]
-    nonce = datalist[1]
-    encryption_mode = datalist[2]
-    file_size = datalist[3]
-    enc_hash = datalist[4]
-    none_enc_hash = datalist[5]
-    file_name = datalist[6]
-
-    current_filename = os.path.basename(path_to_file)
-    new_path_to_file = path_to_file.replace(current_filename, file_name)
-
-    if enc_hash != hash_object(cipher_text) :
-        raise Exception("File encrypted file hashes does not match.")
-
-    if 'AES' in encryption_mode :
-        cipher = AES.new(encryption_key, AES.MODE_CTR, nonce=nonce)
-
-    elif 'CHACHA' in encryption_mode :
-        cipher = ChaCha20.new(encryption_key, nonce=nonce)
-    
-    cipher_text = cipher.decrypt(cipher_text)
-    
-    if none_enc_hash != hash_object(cipher_text) :
-        raise Exception("Decrypted file hashes does not match.")
-
-    if delete_og_file == True :
-        with open(path_to_file, 'wb') as decrypted_file :
-            decrypted_file.write(cipher_text)
+        datalist.append(encryption_key)
         
-        os.rename(path_to_file, new_path_to_file)
+        datalist.append(cipher.nonce)
+
+        datalist.append(hash_object(plain_text))
+
+        plain_text = cipher.encrypt(plain_text)
+
+        ## We overwrite the original non-encrypted
+        ## file because people can recover it with
+        ## special software. But by re-writting
+        ## it with encrypted data, they will only 
+        ## see the encrypted data. 
+        if delete_og_file == True :
+            with open(path_to_file, 'wb') as encrypted_file :
+                encrypted_file.write(plain_text)
+            os.rename(path_to_file, path_to_file + '.encr')
+
+        elif delete_og_file == False :
+            with open(path_to_file + '.encr', 'wb') as encrypted_file :
+                encrypted_file.write(plain_text)
+                
+    
+        with open(path_to_file + ".decr", 'wb') as keyfile :
+            keyfile.write(datalist[0])
+            keyfile.write(datalist[1])
+            keyfile.write(bytes.fromhex(datalist[2]))
         
-    elif delete_og_file == False :
-        with open(new_path_to_file, 'wb') as decrypted_file :
-            decrypted_file.write(cipher_text)
+        messagebox.showinfo(title="Let's Encrypt: Finished Encryption!", message="Finished Encryption of file(s).")
+            
+    ## The formatt of the encrypted file should be :
+    ## File head/Hello World!
+    ## RSA key size
+    ## RSA encrypted datalist
+    ## The encrypted data
+
+    def decrypt_file(self, path_to_file, enc_key, delete_og_file) :
+        ## Basically we are doing the excapt same thing as the
+        ## encrypt_file() function except its backwards and it
+        ## requires way less inputs inorder to get an output
+        datalist = []
+
+        try :
+            with open(path_to_file, 'rb') as plain_file :
+                cipher_text = plain_file.read()
+        except FileNotFoundError :
+            raise FileNotFoundError("The requested file for decryption does not exist.")
         
-    if file_size != os.path.getsize(new_path_to_file) :
-        raise Exception("File sizes do not match.")
+        try : 
+            with open(enc_key, 'rb') as encr_key_loc :
+                datalist.append(encr_key_loc.read(32))
+                datalist.append(encr_key_loc.read(12))
+                datalist.append(encr_key_loc.read(64).hex())
+                #for line in file:
+        #read_data_list.append(int(line.strip()))
+        except FileNotFoundError :
+            raise FileNotFoundError("The decryption file does not exist.")
 
+        cipher = AES.new(datalist[0], AES.MODE_CTR, nonce=datalist[1])
 
-def gen_rsa(rsa_key_size) :
-    if rsa_key_size >= 65537 :
-        raise ValueError("RSA key sizes of over 65537 cause unexpected behaviour, please choose a shorter key length.")
-    elif rsa_key < 3072 :
-        raise ValueError("RSA key sizes of under 3072 is considered insecure for this application, please choose a longer key length.")
-    rsa_key = RSA.generate(rsa_key_size)
-    private_key = RSA.import_key(rsa_key)
-    rsa_key_pub = private_key.public_key().export_key('PEM')
-    return rsa_key, rsa_key_pub
+        current_filename = os.path.basename(path_to_file)
 
+        cipher_text = cipher.decrypt(cipher_text)
+
+        if datalist[2] != hash_object(cipher_text) :
+            print("file hashes does not match")
+            messagebox.showerror(title="Decrypt Error", message="File hashes does not match.")
+            raise Exception("File encrypted file hashes does not match.")
+        
+        if delete_og_file == True :
+            with open(path_to_file, 'wb') as decrypted_file :
+                decrypted_file.write(cipher_text)
+            
+            os.rename(path_to_file, str.replace(path_to_file, ".encr"))
+            
+        elif delete_og_file == False :
+            with open(str.replace(path_to_file, '.encr', ''), 'wb') as decrypted_file :
+                decrypted_file.write(cipher_text)
+        messagebox.showinfo(title="Let's Encrypt: Finished Decryption!", message="Finished Decryption of file(s).")
+
+## Hashes the object with SHA3-512 no duh like you could have just read like a but further to understand what it does
+## this code isn't obfuscated at all and yet you need comments to understand it???
 def hash_object(object_to_hash) :
     obj_bytes = str(object_to_hash).encode('utf-8')
     hasher = hashlib.sha3_512()
@@ -199,44 +159,29 @@ def hash_object(object_to_hash) :
     hashed_object = hasher.hexdigest()
     return hashed_object
 
+
+## "Creating a new thread for dummies"
 def createnewthread(thefunction, arguments):
     newthread = threading.Thread(target=thefunction, args=arguments, daemon=True)
     newthread.start()
 
-## This is the variable sh-- I mean stuff
-## for frontend.
-
-## Defines screen size
-Yvalue = str(600)
-Xvalue = str(800)
-
-about_txt = """
-Let's Encrypt Build 2023-09-04.rc1.gpc_main
-Made by: A Random Person
-License: Apache License
-Date of programming: 2023-09-04 23:00:00
-Why did I do this: No idea
-"""
-
-build_string = "2023-09-09.rc1.gpc_main"
-
-## GPC is desktop, there are multiple "branches"
-## of the encryptor.
-
-
-
-## This is the frontend
+## This is the frontend now
 class PopupManager:
 
     def __init__(self, max_popups):
         self.max_popups = max_popups
         self.popups = []
 
-    def create_popup(self, popup_title, popup_text):
+    def create_popup(self, popup_title, popup_text, popup_size=None):
         if len(self.popups) < self.max_popups:
             popup = tk.Toplevel(root)
             popup.title(popup_title)
-            popup.geometry(str(int(int(Xvalue)/2)) + "x" + str(int(int(Yvalue)/2))) ## This is so stupidly jank by converting it into int twice, we can first turn a string into int which we divide which gives float then int again to get a int only to string again...
+            if popup != None :
+                try :
+                    popup.geometry(str(popup_size))
+                except : pass
+            else : 
+                popup.geometry(str(int(int(Xvalue)/2)) + "x" + str(int(int(Yvalue)/2))) ## This is so stupidly jank by converting it into int twice, we can first turn a string into int which we divide which gives float then int again to get a int only to string again...
             tk.Label(popup, text=popup_text, font=(16)).place(x=5, y=5)
             self.popups.append(popup)
             popup.protocol("WM_DELETE_WINDOW", lambda p=popup: self.close_popup(p))
@@ -247,13 +192,67 @@ class PopupManager:
     def close_popup(self, popup):
         popup.destroy()
         self.popups.remove(popup)
-    
 
 def about_cmd(): 
-    popup_manager.create_popup(popup_title="About: Let's Encrypt!", popup_text=about_txt)
+    popup_manager.create_popup(popup_title="About:  ", popup_text=about_txt, popup_size='500x150')
 
 def redir_to_site():
+    ## You can't have arguments when calling a function in Python
+    ## which is really dumb...
     webbrowser.open("https://randomperson.net/")
+
+def encrypt_file_cmd():
+    if is_user_admin is False :
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+        #if is_user_admin is False:
+        #    raise PermissionError('This program requires administrator priveledges.')
+    file_path = filedialog.askopenfilename()
+    if file_path != "" :
+        encryptor = enc_dec_obj()
+        encryptor.encrypt_file(file_path, False)
+    del file_path
+
+def decrypt_file_cmd():
+    if is_user_admin is False :
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+    file_path = filedialog.askopenfilename()
+    file_path2 = filedialog.askopenfilename()
+
+    if file_path != '' or file_path2 != '' :
+        decryptor = enc_dec_obj()
+        decryptor.decrypt_file(file_path, file_path2, False)
+    del file_path, file_path2
+
+    
+
+## First thing that runs checks whether or not
+## the user started this program with admin
+## privileges
+is_admin()
+
+## This is the variable sh-- I mean stuff
+## for frontend.
+
+## Defines screen size
+Yvalue = str(600)
+Xvalue = str(800)
+
+about_txt = """Let's Encrypt Build 2023-09-30.gpc_main.rc2.v01
+Made by: A Random Person
+License: MIT License
+Date of programming: 2023-09-22 15:00:00
+Why did I do this: No idea"""
+
+build_string = "2023-09-30.gpc_main.rc2.v01"
+
+dev_branch = "Mainline"
+
+dev_stage = "Alpha"
+
+
+def get_versions() :
+    json_version = '{"crypto_version"="enc_dec_obj().cryptographic_library_version", "build_string"="buildstring"}'
+    
 
 ## Main loop stuff idk what this does ¯\_(ツ)_/¯
 root = tk.Tk()
@@ -262,8 +261,6 @@ popup_manager = PopupManager(max_popups=3)
 
 root.title("Let's, Encrypt!")
 
-
-
 root.geometry(Xvalue + 'x' + Yvalue)
 
 menu = tk.Menu(root)
@@ -271,15 +268,18 @@ menu = tk.Menu(root)
 ## Help command
 helpcmd = tk.Menu(menu)
 helpcmd.add_command(label="Website", command=redir_to_site)
+## About version command
 helpcmd.add_command(label="About", command=about_cmd)
 
+## Encrypt/decrypt file commands
+filecmd = tk.Menu(menu)
+filecmd.add_command(label="Encrypt", command=encrypt_file_cmd)
+filecmd.add_command(label="Decrypt", command=decrypt_file_cmd)
 
-## About version command
+menu.add_cascade(label="File", menu=filecmd)
 menu.add_cascade(label="Help", menu=helpcmd)
+
 root.config(menu=menu)
 
-
-## I gaved up on electron lmfao
+## I gaved up on electron lmao
 root.mainloop()
-
-
