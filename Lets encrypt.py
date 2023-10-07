@@ -1,13 +1,25 @@
-## Encryption software based on my ransomware lmao
-## This code is an absolute abomination lol I have
-## no idea if this works or not. 
-import os, threading, subprocess, cffi, ctypes, hashlib, webbrowser, sys, json
+#commands for the buttons are like command=blah blah blah, in the button ()
+import customtkinter, secrets, string
+import os, threading, subprocess, ctypes, hashlib, webbrowser, sys ## Crypto library stuff
 import tkinter as tk
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
-from random import SystemRandom
-from tkinter import messagebox
-from tkinter import filedialog ## Why do we have to import this seperatly if we import everything? like how stupid is this
+from tkinter import messagebox, filedialog
+
+about_txt = """\
+Let's Encrypt Build 2023-10-06.gpc_main.rc3.v12
+Made by: Jinghao Li, Kekoa Dang, Skidaux
+License: BSD 3-Clause No Nuclear License 2014 
+Date of programming: 2023-10-02
+Why did we do this: No idea"""
+
+build_string = "2023-10-06.gpc_main.rc3.v12"
+
+dev_branch = "Mainline"
+
+dev_stage = "Beta"
+
+app = customtkinter.CTk()
 
 ## Currently AES-256-CTR is the only cipher suit supported 
 ## Here is the defining that comes before everything else
@@ -41,8 +53,6 @@ def request_uac_elevation() :
             return False
     else: return True
 
-#hashtemp = '' ## LOL the random variable that breaks the program if not defined
-## Encryptor/decryptor object
 class enc_dec_obj() :
 
     cryptographic_library_version = "2023-10-02.gpc_main.rc3.v05"
@@ -129,20 +139,16 @@ class enc_dec_obj() :
                 ## Encrypted SHA3-512 Hash/Checksum
                 encrypted_file.write(datalist2[2])
 
-                ## Encrypting
                 buffer = plain_file.read(65536)
                 while len(buffer) > 0 :
                     ## Encrypted File
                     encrypted_file.write(cipher.encrypt(buffer))
                     buffer = plain_file.read(65536)
-
-                print("encrypted file")
+                
         if delete_og_file == True :
-            os.remove(path_to_file)
-
+            os.remove(path_to_file) 
         messagebox.showinfo(title="Let's Encrypt: Finished Encryption!", message="Finished Encryption of file(s).") 
         
-
     def decrypt_file(self, password, path_to_file, delete_og_file = False ) :
         ## Basically we are doing the excapt same thing as the
         ## encrypt_file() function except its backwards and it
@@ -165,7 +171,7 @@ class enc_dec_obj() :
                 ## Encrypted Nonce 11 bytes
                 datalist2.append(encr_key_loc.read(11))
                 ## Encrypted non-encrypted file checksum/hash 64 bytes
-                datalist2.append(encr_key_loc.read(64)) 
+                datalist2.append(encr_key_loc.read(64))
                 ## We don't read the rest of the file because we only need the header
                 ## Plus it would nuke the system's memory if we were to do so
 
@@ -219,20 +225,19 @@ class enc_dec_obj() :
                     hash_thread.join()
                     if hashtemp == hashtemp_copy :
                         messagebox.showerror(title="Exact File Already exists", message="The exact decrypted file already exists.")
+                        os.remove(path_to_file + ".temp")
                     else :
-                        messagebox.showerror(title="File Already exists", message="The decrypted file alreayd exists.")
-                    os.remove(path_to_file + ".temp")
-                except FileNotFoundError: os.rename(path_to_file + ".temp", str.replace(path_to_file, ".encr", ''))
+                        if messagebox.askyesno(title="File Already exists", message="The decrypted file already exists. Do you want to overwrite?") :
+                             os.replace(path_to_file + ".temp", str.replace(path_to_file, ".encr", ''))
+                        else : os.remove(path_to_file + ".temp")
+                except FileNotFoundError: 
+                    os.rename(path_to_file + ".temp", str.replace(path_to_file, ".encr", ''))
             if delete_og_file == True :
                 os.replace(path_to_file + ".temp", path_to_file)
                 os.replace(path_to_file, str.replace(path_to_file, '.encr', ''))
             
         messagebox.showinfo(title="Let's Encrypt: Finished Decryption!", message="Finished Decryption of file(s).")
 
-## Hashes the object with SHA3-512 no duh like you could have just read like a but further to understand what it does
-## this code isn't obfuscated at all and yet you need comments to understand it???
-## But it basically allows for less memory usage as it does not read all of it at the
-## same time. 
 def hash_object(object_to_hash=None, file_path=None, mode="r") :
     global hashtemp
     ## But heres the API doc anyways, if you specify the object_to_hash, then its going to be using the older hash algo
@@ -248,145 +253,174 @@ def hash_object(object_to_hash=None, file_path=None, mode="r") :
     else :
         hasher.update(object_to_hash)
     hashed_object = hasher.hexdigest()
-    print("hashed")
     del hasher
     del file_path
     if mode == 'r' :
         return hashed_object
     else : hashtemp = hashed_object
 
-def gen_password(length = 24, test_password = True) :
-    characters_pool = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "`", "~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "-", "_", "=", "+", "[", "{", "]", "}", "|", ";", ":", "<", ".", "?", "/", ",", "|"  ]
-    characters_pool_rnd = []
-    return_password = ''
-    ## First we generate a random password pool
-    for i in range(len(characters_pool)*32) :
-        characters_pool_rnd.append(i)
-    ## Then from that list we generate the password
-    if test_password == False :
-        for i in range(length) : 
-            return_password += characters_pool_rnd[SystemRandom().randint(0, len(characters_pool_rnd))]
-    if test_password == True :
-        while return_password == "" and return_password.isalpha() == False and return_password.isdigit() == False and return_password.isalnum() == False :
-            return_password = ''
-            for i in range(length) : 
-                return_password += characters_pool_rnd[SystemRandom().randint(0, len(characters_pool_rnd))]
-    return return_password
+#delete_og_file = True
 
-## This thing basically tests the backend of the program to make sure it works
-def test_crypto_backend() :
-    pass
+def encryptbcmd(): #encrypt button command + 3 checks to make sure everything is there
+    global errorlabel
+    password = password_prompt.get()
+    #password = password.replace(" ", "")  
+    password_prompt.delete(0, tk.END)
+    password_prompt.insert(0, password)
+    
+    if not os.path.isfile(file_path): # check 1 to see if the file exsisted 
+        error_message = "Error: Unknown file."
 
-## This is the frontend now but this front end is used for
-## debugging purposes and is not an actual production GUI
-## (I can't design GUIs even if I wanted to and this
-##  GUI simply sucks.)
-class PopupManager:
+    elif password == "": # check 2 to see if you got a password
+        error_message = "Please enter a password."
 
-    def __init__(self, max_popups):
-        self.max_popups = max_popups
-        self.popups = []
+    elif password.startswith("   ") :
+        error_message = "Please enter a stronger password."
+    
+    elif len(password) < 12 or len(password) > 50: # checks if password length is the right amount if characters
+        error_message = "Password must be between \n12 and 50 characters."
 
-    def create_popup(self, popup_title, popup_text, popup_size=None):
-        if len(self.popups) < self.max_popups:
-            popup = tk.Toplevel(root)
-            popup.title(popup_title)
-            if popup != None :
-                try :
-                    popup.geometry(str(popup_size))
-                except : pass
-            else : 
-                popup.geometry(str(int(int(Xvalue)/2)) + "x" + str(int(int(Yvalue)/2))) ## This is so stupidly jank by converting it into int twice, we can first turn a string into int which we divide which gives float then int again to get a int only to string again...
-            tk.Label(popup, text=popup_text, font=(16)).place(x=5, y=5)
-            self.popups.append(popup)
-            popup.protocol("WM_DELETE_WINDOW", lambda p=popup: self.close_popup(p))
-        else : 
-            messagebox.showwarning(title="Too many popups!", message="Please close a popup before opening another.")
+    else:
+        error_message = None 
 
-    ## IDK what this is for, but I asked ChatGPT to write it so ¯\_(ツ)_/¯
-    def close_popup(self, popup):
-        popup.destroy()
-        self.popups.remove(popup)
+    try:
+        errorlabel.pack_forget()
+    except:
+        pass
 
-def about_cmd(): 
-    popup_manager.create_popup(popup_title="About:  ", popup_text=about_txt, popup_size='400x150')
-
-def redir_to_site():
-    ## You can't have arguments when calling a function in Python
-    ## which is really dumb...
-    webbrowser.open("https://randomperson.net/")
-
-def encrypt_file_cmd():
-    if is_user_admin is False :
-        request_uac_elevation()
-    file_path = filedialog.askopenfilename()
-    if file_path != "" :
+    if error_message: # gives the error message if any
+        errorlabel = customtkinter.CTkLabel(app, text=error_message, fg_color="transparent", text_color="red", font=("",20))
+        errorlabel.pack(side=tk.BOTTOM, padx=(70), pady=(0, 50), anchor=tk.CENTER)
+        app.after(3000, lambda: errorlabel.pack_forget())
+    else: # File + password
+        password_prompt.delete(0, tk.END)
+        file_path_label.delete(0, tk.END)
+        password_prompt.delete(0, tk.END)
         encryptor = enc_dec_obj()
-        encryptor.encrypt_file("Hello, World!", file_path, False)
-        del file_path
+        encryptor.encrypt_file(password, file_path, False)
         del encryptor
+     
+def generate_password(pwd_length = 16):
+    characters = string.ascii_letters + string.digits + string.punctuation
+    password = ''.join(secrets.choice(characters) for _ in range(pwd_length))
+    password_prompt.delete(0, tk.END)
+    password_prompt.insert(0, password)
 
-def decrypt_file_cmd():
-    if is_user_admin is False :
-        request_uac_elevation()
+file_path = ""
+def encryptupload(): #uploads file to encrypt button
+    global file_path
     file_path = filedialog.askopenfilename()
-    if file_path != '' :
+    file_path_label.insert(0,file_path)
+
+def decryptbcmd():
+    global errorlabel
+    password = password_prompt.get()
+    if not os.path.isfile(file_path): # check 1 to see if the file exsisted 
+        error_message = "Error: Unknown file."
+    elif password == "": # check 2 to see if you got a password
+        error_message = "Please enter your password."
+    # i dont know how you decrypt it, so this is the most i can do
+    elif len(password) < 12 or len(password) > 50: # checks if password length is the right amount if characters
+            error_message = "Password must be between \n12 and 50 characters."
+    else:
+        error_message = None
+    try:
+        errorlabel.pack_forget()
+    except:
+        pass
+    if error_message: # gives the error message if any
+        errorlabel = customtkinter.CTkLabel(app, text=error_message, fg_color="transparent", text_color="red", font=("",20))
+        errorlabel.pack(side=tk.BOTTOM, padx=(75), pady=(0, 55), anchor=tk.CENTER)
+        app.after(1500, lambda: errorlabel.pack_forget())
+    else: # File + password is ready to be used
+        password_prompt.delete(0, tk.END)
         decryptor = enc_dec_obj()
-        decryptor.decrypt_file("Hello, World!", file_path, False)
-        del file_path
-        del decryptor
+        decryptor.decrypt_file(password, file_path, False) ## Last variable is for deleting original file. If True, it delete, if False, it does not delete
+        print("decypting! ALL CHECKS PASSED!")
 
-## First thing that runs checks whether or not
-## the user started this program with admin
-## privileges
-is_admin()
+def quit_program():
+    app.quit()
 
-## Defines screen size
-Yvalue = str(600)
-Xvalue = str(800)
+def selectmodecmd(value): # select what screen your on encrypt / decrypt
+    global decrypt_button, encrypt_button, encryptupload_button, file_path_label
+    global password_prompt, set_password, generate_password_button
+    if value == " 🔓 Decrypt File ": # decrypt screen
+        try: # removes encrypt screen
+            encrypt_button.pack_forget()
+            password_prompt.pack_forget()
+            set_password.pack_forget()
+            encryptupload_button.pack_forget()
+            file_path_label.pack_forget()
+            generate_password_button.pack_forget()
+        except:
+            quit_program() # closes if something fails
+        finally:
+            decrypt_button = customtkinter.CTkButton(app, text="🔓 Decrypt File", font=("Arial", 25, "bold"), command=decryptbcmd, height=50, width=250)
+            decrypt_button.pack(side=tk.BOTTOM, padx=(75), pady=(20,55), anchor=tk.CENTER)    
 
-about_txt = """\
-Let's Encrypt Build 2023-10-03.gpc_main.rc3.v05
-Made by: Jinghao Li, Kekoa Dang, Skidaux
-License: BSD 3-Clause No Nuclear License 2014 
-Date of programming: 2023-10-02
-Why did we do this: No idea"""
+            password_prompt = customtkinter.CTkEntry(app, placeholder_text="E.g. 1234", width=250)
+            password_prompt.pack(side=tk.BOTTOM, padx=(20), pady=(0,57), anchor=tk.CENTER)                         
+            
+            set_password = customtkinter.CTkLabel(app, text="Enter Your Password", font=("Arial", 15, "bold"))
+            set_password.pack(side=tk.BOTTOM, padx=(76), anchor=tk.W)   
+                
+            encryptupload_button = customtkinter.CTkButton(app, text="Select Encrypted File", font=("Arial", 18), fg_color="#393939", hover_color="#2E2E2E", command=encryptupload, height=25, width=250)
+            encryptupload_button.pack(side=tk.BOTTOM, padx=(75), pady=(15, 25), anchor=tk.CENTER)   
 
-build_string = "2023-10-04.gpc_main.rc3.v05"
+            file_path_label = customtkinter.CTkEntry(app, placeholder_text="Encrypted File Path", width=250)
+            file_path_label.pack(side=tk.BOTTOM, padx=(20), anchor=tk.CENTER)      
+    else: # encrypt screen
+        try: # removes decrypt screen
+            decrypt_button.pack_forget()
+            password_prompt.pack_forget()
+            set_password.pack_forget()
+            encryptupload_button.pack_forget()
+            file_path_label.pack_forget()
+        except:
+            quit_program() # closes if something fails
+        finally:      
+            encrypt_button = customtkinter.CTkButton(app, text="🔒 Encrypt File", font=("Arial", 25, "bold"), command=encryptbcmd, height=50, width=250)
+            encrypt_button.pack(side=tk.BOTTOM, padx=(75), pady=(10,55), anchor=tk.CENTER)    
 
-dev_branch = "Mainline"
+            generate_password_button = customtkinter.CTkButton(app, text="Generate Password", font=("Arial", 18), fg_color="#393939", hover_color="#2E2E2E", command=generate_password, height=25, width=250)
+            generate_password_button.pack(side=tk.BOTTOM, padx=(75), pady=(15, 25), anchor=tk.CENTER)   
 
-dev_stage = "Alpha"
+            password_prompt = customtkinter.CTkEntry(app, placeholder_text="12 - 50 characters", width=250)
+            password_prompt.pack(side=tk.BOTTOM, padx=(20), anchor=tk.CENTER)                         
+            
+            set_password = customtkinter.CTkLabel(app, text="Set a Password", font=("Arial", 15, "bold"))
+            set_password.pack(side=tk.BOTTOM, padx=(76), anchor=tk.W)   
+                
+            encryptupload_button = customtkinter.CTkButton(app, text="Select File", font=("Arial", 18), fg_color="#393939", hover_color="#2E2E2E", command=encryptupload, height=25, width=250)
+            encryptupload_button.pack(side=tk.BOTTOM, padx=(75), pady=(15,25), anchor=tk.CENTER)   
 
-def get_versions() :
-    json_version = '{"crypto_version"="enc_dec_obj().cryptographic_library_version", "build_string"="buildstring"}'
+            file_path_label = customtkinter.CTkEntry(app, placeholder_text="File Path", width=250)
+            file_path_label.pack(side=tk.BOTTOM, padx=(20), anchor=tk.CENTER)  
 
-## Main loop stuff idk what this does ¯\_(ツ)_/¯
-root = tk.Tk()
+autoselectmode = customtkinter.StringVar(value=" 🔒 Encrypt File ")
+selectmode = customtkinter.CTkSegmentedButton(app, values=[" 🔒 Encrypt File ", " 🔓 Decrypt File "], font=("Arial", 20, "bold"),
+                                              selected_color="#393939", fg_color="#1A1A1A", unselected_color="#141414", unselected_hover_color="#2E2E2E", selected_hover_color="#393939",
+                                                border_width=7, corner_radius=13, height=50, variable=autoselectmode, command=selectmodecmd)
+selectmode.pack(side=customtkinter.TOP, pady=(50,20))
 
-popup_manager = PopupManager(max_popups=3)
+quit_button = customtkinter.CTkButton(app, text="Quit", font=("Arial", 15, "bold"), command=quit_program, fg_color="red", hover_color="darkred", height=35, width=200) 
+quit_button.pack(side=customtkinter.BOTTOM, pady=10)
 
-root.title("Let's, Encrypt!")
+def center_window(root, width, height): # centers the app to your pc res
+    # Get the screen width and height
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    
+    # Calculate the X and Y coordinates for the window to be centered
+    x = (screen_width - width) // 2
+    y = (screen_height - height) // 2
+    
+    # Set the window's position
+    root.geometry(f"{width}x{height}+{x}+{y}")
 
-root.geometry(Xvalue + 'x' + Yvalue)
-
-menu = tk.Menu(root)
-
-## Help command
-helpcmd = tk.Menu(menu)
-helpcmd.add_command(label="Website", command=redir_to_site)
-## About version command
-helpcmd.add_command(label="About", command=about_cmd)
-
-## Encrypt/decrypt file commands
-filecmd = tk.Menu(menu)
-filecmd.add_command(label="Encrypt", command=encrypt_file_cmd)
-filecmd.add_command(label="Decrypt", command=decrypt_file_cmd)
-
-menu.add_cascade(label="File", menu=filecmd)
-menu.add_cascade(label="Help", menu=helpcmd)
-
-root.config(menu=menu)
-
-## I gaved up on electron lmao
-root.mainloop()
+app.resizable(False, False) # makes it unable to resize the app
+center_window(app, 400, 600)
+app.title("PyQuCryptor") # title 
+value=" 🔒 Encrypt File " # sets value for line below
+selectmodecmd(value) # selects encrypt screen first, if this is not here then it will be a blank screen then give a error
+app.mainloop()
