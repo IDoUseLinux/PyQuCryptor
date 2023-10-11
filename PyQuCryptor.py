@@ -1,23 +1,22 @@
 ## Encryption software based on my ransomware...
 ## This is main, and is designed for Windows
-import customtkinter, secrets, string
-import os, threading, subprocess, ctypes, hashlib, webbrowser, sys ## Crypto library stuff
+import customtkinter, secrets, string, json 
+import os, threading, subprocess, ctypes, hashlib, webbrowser, sys ## Crypto stuff
 import tkinter as tk
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from tkinter import messagebox, filedialog
-#from concurrent.futures import ProcessPoolExecutor
+from PIL import Image, ImageDraw
 
 about_txt = """
-Let's Encrypt Build 2023-10-09.lpt_main.rc3.v24
+Let's Encrypt Build 2023-10-10.lpt_main.rc3.v27
 Made by: Jinghao Li, Kekoa Dang, Skidaux
 License: BSD 3-Clause No Nuclear License 2014 
-Date of programming: 2023-10-09
+Date of programming: 2023-10-10
 Programming language: Python 3.11
 Why did we do this: No idea"""
 
-build_string = "2023-10-09.lpt_main.rc3.v24"
-
+build_string = "2023-10-10.lpt_main.rc3.v27"
 dev_branch = "Mainline"
 
 dev_stage = "Beta"
@@ -59,7 +58,7 @@ def request_uac_elevation() :
 
 class enc_dec_obj() :
 
-    cryptographic_library_version = "2023-10-07.gpc_main.rc3.v05"
+    cryptographic_library_version = "2023-10-10.gpc_main.rc3.v17"
     
     admin = is_admin()
 
@@ -74,6 +73,10 @@ class enc_dec_obj() :
         try :
             with open(path_to_file, 'rb') :
                 pass
+        except PermissionError :
+            request_uac_elevation()
+            with open(path_to_file, 'rb') :
+                raise FileNotFoundError
         except FileNotFoundError :
             raise FileNotFoundError("The requested file for encryption does not exist.")
         
@@ -121,7 +124,7 @@ class enc_dec_obj() :
         datalist2[2] = cipher.encrypt(bytes.fromhex(datalist2[2]))
 
         cipher = AES.new(datalist3[0], AES.MODE_CTR, nonce=datalist3[1])
-
+        del data
         with open(path_to_file, 'rb') as plain_file :
             with open(path_to_file + '.encr', 'wb') as encrypted_file :
 
@@ -150,11 +153,8 @@ class enc_dec_obj() :
                     buffer = plain_file.read(65536)
                 
         if delete_og_file == True :
-            os.remove(path_to_file)
-
-                
+            os.remove(path_to_file)      
         messagebox.showinfo(title="PyQuCryptor", message="Finished Encryption of file(s).") 
-        
 
     def decrypt_file(self, password, path_to_file, delete_og_file = False ) :
         ## Basically we are doing the excapt same thing as the
@@ -181,7 +181,28 @@ class enc_dec_obj() :
                 datalist2.append(encr_key_loc.read(64))
                 ## We don't read the rest of the file because we only need the header
                 ## Plus it would nuke the system's memory if we were to do so
-
+                
+        except PermissionError :
+            request_uac_elevation()
+            try : 
+                ## Password Salt
+                datalist.append(encr_key_loc.read(24))
+                ## Encryptor's Nonce
+                datalist.append(encr_key_loc.read(12))
+                ## Encrypted file header hash
+                datalist.append(bytes.hex(encr_key_loc.read(64))) 
+                
+                ## Encrypted Encryption Key 32 bytes
+                datalist2.append(encr_key_loc.read(32))
+                ## Encrypted Nonce 11 bytes
+                datalist2.append(encr_key_loc.read(11))
+                ## Encrypted non-encrypted file checksum/hash 64 bytes
+                datalist2.append(encr_key_loc.read(64))
+                ## We don't read the rest of the file because we only need the header
+                ## Plus it would nuke the system's memory if we were to do so
+            finally:
+                print("just put this implace to run it. remove after line 204")
+                
         except FileNotFoundError :
             raise FileNotFoundError("The requested file for decryption does not exist.")
 
@@ -260,9 +281,10 @@ def hash_object(object_to_hash=None, file_path=None, mode="r") :
 
 #delete_og_file = True
 
-def encryptbcmd(): #encrypt button command + 3 checks to make sure everything is there
+def encryptcmd(): #encrypt button command + 3 checks to make sure everything is there
     global errorlabel
     password = password_prompt.get()
+    file_path = file_path_label.get()
     #password = password.replace(" ", "")  
     password_prompt.delete(0, tk.END)
     password_prompt.insert(0, password)
@@ -270,14 +292,14 @@ def encryptbcmd(): #encrypt button command + 3 checks to make sure everything is
     if not os.path.isfile(file_path): # check 1 to see if the file exsisted 
         error_message = "Error: Unknown file."
 
-    elif password == "": # check 2 to see if you got a password
+    elif password == "": # check to see if you got a password
         error_message = "Please enter a password."
 
-    elif password.startswith("   ") :
+    elif password.startswith(password[:1]*3) : ## Checks if the first 3 letters are the same b/c strong passwords
         error_message = "Please enter a stronger password."
     
     elif len(password) < 12 or len(password) > 50: # checks if password length is the right amount if characters
-        error_message = "Password must be between \n12 and 50 characters."
+        error_message = "Password must be between 12 and 50 characters."
 
     else:
         error_message = None 
@@ -288,9 +310,7 @@ def encryptbcmd(): #encrypt button command + 3 checks to make sure everything is
         pass
 
     if error_message: # gives the error message if any
-        errorlabel = customtkinter.CTkLabel(app, text=error_message, fg_color="transparent", text_color="red", font=("",20))
-        errorlabel.pack(side=tk.BOTTOM, padx=(70), pady=(0, 50), anchor=tk.CENTER)
-        app.after(2000, lambda: errorlabel.pack_forget())
+        messagebox.showerror(title="PyQuCryptor: Error", message=error_message)
     else: # File + password
         password_prompt.delete(0, tk.END)
         file_path_label.delete(0, tk.END)
@@ -305,15 +325,25 @@ def generate_password(pwd_length = 16):
     password_prompt.delete(0, tk.END)
     password_prompt.insert(0, password)
 
+def redir_to_site():
+    ## You can't have arguments when calling a function in Python
+    ## which is really dumb...
+    webbrowser.open("https://randomperson.net/")
+
+def redir_to_github() :
+    webbrowser.open("https://github.com/IDoUseLinux/PyQuCryptor")
+
 file_path = ""
 def encryptupload(): #uploads file to encrypt button
-    global file_path
     file_path = filedialog.askopenfilename()
+    file_path_label.delete(0, tk.END)
     file_path_label.insert(0,file_path)
 
-def decryptbcmd():
+def decryptcmd():
     global errorlabel
     password = password_prompt.get()
+    file_path = file_path_label.get()
+
     if not os.path.isfile(file_path): # check 1 to see if the file exsisted 
         error_message = "Error: Unknown file."
     elif password == "": # check 2 to see if you got a password
@@ -321,6 +351,7 @@ def decryptbcmd():
     # i dont know how you decrypt it, so this is the most i can do
     elif len(password) < 12 or len(password) > 50: # checks if password length is the right amount if characters
         error_message = "Password must be between \n12 and 50 characters."
+    
     else:
         error_message = None
     try:
@@ -328,9 +359,7 @@ def decryptbcmd():
     except :
         pass
     if error_message: # gives the error message if any
-        errorlabel = customtkinter.CTkLabel(app, text=error_message, fg_color="transparent", text_color="red", font=("",20))
-        errorlabel.pack(side=tk.TOP, padx=(75), pady=(10, 0), anchor=tk.CENTER)
-        app.after(1500, lambda: errorlabel.pack_forget())
+        messagebox.showerror(title="PyQuCryptor: Error", message=error_message)
     else: # File + password is ready to be used
         password_prompt.delete(0, tk.END)
         decryptor = enc_dec_obj()
@@ -348,11 +377,9 @@ def settingscmd():
         encryptupload_button.pack_forget()
         file_path_label.pack_forget()
         generate_password_button.pack_forget()
-        errorlabel.pack_forget()
     except:
         pass
     
-
 def selectmodecmd(value): # select what screen your on encrypt / decrypt
     global encrypt_button, encryptupload_button, file_path_label
     global password_prompt, set_password, generate_password_button
@@ -363,78 +390,92 @@ def selectmodecmd(value): # select what screen your on encrypt / decrypt
         encryptupload_button.pack_forget()
         file_path_label.pack_forget()
         generate_password_button.pack_forget()
-        errorlabel.pack_forget()
     except:
         pass
     if value == " 🔓 Decrypt File ": # decrypt screen
-        encrypt_button = customtkinter.CTkButton(app, text="🔓 Decrypt File", font=("Arial", 25, "bold"), command=decryptbcmd, height=50, width=250)
+        topframe = customtkinter.CTkFrame(app, width=400, height=74, fg_color="#44AE4E", corner_radius=0)
+        topframe.place(x=0, y=0)
+        topframe.lower(applabelname)
+
+        encrypt_button = customtkinter.CTkButton(app, text="🔓 Decrypt File", font=("Arial", 25, "bold"), fg_color="#E34039", command=decryptcmd, height=50, width=250)
         encrypt_button.pack(side=tk.BOTTOM, padx=(75), pady=(20,55), anchor=tk.CENTER)    
 
         password_prompt = customtkinter.CTkEntry(app, placeholder_text="E.g. 1234", width=250)
         password_prompt.pack(side=tk.BOTTOM, padx=(20), pady=(0,57), anchor=tk.CENTER)                         
         
         set_password = customtkinter.CTkLabel(app, text="Enter Your Password", font=("Arial", 15, "bold"))
-        set_password.pack(side=tk.BOTTOM, padx=(76), anchor=tk.W)   
+        set_password.pack(side=tk.BOTTOM, padx=(77), anchor=tk.W)   
             
-        encryptupload_button = customtkinter.CTkButton(app, text="Select Encrypted File", font=("Arial", 18), fg_color="#393939", hover_color="#2E2E2E", command=encryptupload, height=25, width=250)
+        encryptupload_button = customtkinter.CTkButton(app, text="Select Encrypted File", font=("Arial", 18), fg_color="#393939", hover_color="#317037", command=encryptupload, height=25, width=250)
         encryptupload_button.pack(side=tk.BOTTOM, padx=(75), pady=(15, 25), anchor=tk.CENTER)   
 
         file_path_label = customtkinter.CTkEntry(app, placeholder_text="Encrypted File Path", width=250)
         file_path_label.pack(side=tk.BOTTOM, padx=(20), anchor=tk.CENTER)      
     else: # encrypt screen   
-        encrypt_button = customtkinter.CTkButton(app, text="🔒 Encrypt File", font=("Arial", 25, "bold"), command=encryptbcmd, height=50, width=250)
-        encrypt_button.pack(side=tk.BOTTOM, padx=(75), pady=(10,55), anchor=tk.CENTER)    
+        topframe = customtkinter.CTkFrame(app, width=400, height=74, fg_color="#E34039", corner_radius=0)
+        topframe.place(x=0, y=0)
+        topframe.lower(applabelname)
 
-        generate_password_button = customtkinter.CTkButton(app, text="Generate Password", font=("Arial", 18), fg_color="#393939", hover_color="#2E2E2E", command=generate_password, height=25, width=250)
-        generate_password_button.pack(side=tk.BOTTOM, padx=(75), pady=(15, 25), anchor=tk.CENTER)   
 
-        password_prompt = customtkinter.CTkEntry(app, placeholder_text="12 - 50 characters", width=250)
-        password_prompt.pack(side=tk.BOTTOM, padx=(20), anchor=tk.CENTER)                         
+
+        encrypt_button = customtkinter.CTkButton(app, text="🔒 Encrypt File", font=("Arial", 22, "bold") ,fg_color="#44AD4D", bg_color="#192E45", hover_color="#28482B", command=encryptcmd, height=50, width=325)
+        encrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)    
+
+        generate_password_button = customtkinter.CTkButton(app, text="Generate Password", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=generate_password, height=25, width=325)
+        generate_password_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
+
+        password_prompt = customtkinter.CTkEntry(app, placeholder_text="12 - 50 characters", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
+        password_prompt.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER)
         
-        set_password = customtkinter.CTkLabel(app, text="Set a Password", font=("Arial", 15, "bold"))
-        set_password.pack(side=tk.BOTTOM, padx=(76), anchor=tk.W)   
+        set_password = customtkinter.CTkLabel(app, text="Set a Password", bg_color="#192E45", font=("Arial", 18, "bold"))
+        set_password.pack(side=tk.BOTTOM, padx=(30), pady=(0,2), anchor=tk.W)   
             
-        encryptupload_button = customtkinter.CTkButton(app, text="Select File", font=("Arial", 18), fg_color="#393939", hover_color="#2E2E2E", command=encryptupload, height=25, width=250)
-        encryptupload_button.pack(side=tk.BOTTOM, padx=(75), pady=(15,25), anchor=tk.CENTER)   
+        encryptupload_button = customtkinter.CTkButton(app, text="Select File", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=encryptupload, height=25, width=325)
+        encryptupload_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
 
-        file_path_label = customtkinter.CTkEntry(app, placeholder_text="File Path", width=250)
-        file_path_label.pack(side=tk.BOTTOM, padx=(20), anchor=tk.CENTER)  
-
-mainframe = customtkinter.CTkFrame(app, width=400, height=600, fg_color="#192E45")
+        file_path_label = customtkinter.CTkEntry(app, placeholder_text="File Path", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
+        file_path_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER)  
+        
+mainframe = customtkinter.CTkFrame(app, width=400, height=600, fg_color="#192E45", corner_radius=0)
 mainframe.place(x=0, y=0)
 
-topframe = customtkinter.CTkFrame(app, width=400, height=74, fg_color="#E34039", corner_radius=0)
-topframe.place(x=0, y=0)
-
-applabelname = customtkinter.CTkLabel(app, text="PyQuCryptor", fg_color="#E34039", bg_color="#E34039", text_color="white", font=("Arial",30, "bold"))
+applabelname = customtkinter.CTkLabel(app, text="PyQuCryptor", bg_color="#E34039", text_color="white", font=("Arial",30, "bold"))
 applabelname.pack(side=tk.TOP, pady=(10,0), padx=(20,0), anchor=tk.NW)
-applabelname.place(x = 0, y = 0)
+applabelname.place(x = 20, y = 20)
 
-options_button = customtkinter.CTkButton(app, text="⚙️", font=("Arial", 30), hover_color="blue", bg_color="#E34039", fg_color="#E34039", command=settingscmd, height=30, width=30)
+options_button = customtkinter.CTkButton(app, text="⚙️", font=("Arial", 30), hover_color="#E34039", bg_color="#E34039", fg_color="#E34039", command=settingscmd, height=30, width=30)
 options_button.pack(side=tk.TOP, anchor=tk.NE) 
+options_button.place(x = 290, y = 17)
 
 autoselectmode = customtkinter.StringVar(value=" 🔒 Encrypt File ")
 selectmode = customtkinter.CTkSegmentedButton(app, values=[" 🔒 Encrypt File ", " 🔓 Decrypt File "], font=("Arial", 20, "bold"),
                                               selected_color="#393939", fg_color="#1A1A1A", unselected_color="#141414", unselected_hover_color="#2E2E2E", selected_hover_color="#393939",
-                                                border_width=7, corner_radius=13, height=50, variable=autoselectmode, command=selectmodecmd)
-selectmode.pack(side=customtkinter.TOP, pady=(20,0))
+                                                border_width=7, corner_radius=13, height=50, bg_color="#192E45", variable=autoselectmode, width=325, command=selectmodecmd)
+selectmode.pack(side=customtkinter.TOP, padx=10, pady=(100,0)) 
 
-
-quit_button = customtkinter.CTkButton(app, text="Quit", font=("Arial", 15, "bold"), command=quit_program, fg_color="red", hover_color="darkred", height=35, width=200) 
-quit_button.pack(side=customtkinter.BOTTOM, pady=10)
 
 def center_window(root, width, height): # centers the app to your pc res
     #global adjust_width, adjust_height
     # Get the screen width and height
+    # Get the screen width and height
+    # Get the screen width and height
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
-    
+
+    # print(height)
+    # print(screen_width)
+    # width_temp = width
+    #height = int((screen_height / 1080) * height * 2)
+    #width = int((screen_width / 2560) * width * 2)
+    #height = int(height * (width/width_temp))
+    # print(height)
+    # print(width)
     #screen_width = screen_width / 1.35
     #screen_height = screen_height / 1.6
 
     # Calculate the X and Y coordinates for the window to be centered
-    x = (screen_width - width) // 2
-    y = (screen_height - height) // 2
+    x = (screen_width - width) // 4
+    y = (screen_height - height) // 4
     
     #adjust_width = screen_width / 2.7
     #adjust_height = screen_height / 3.2
@@ -443,10 +484,28 @@ def center_window(root, width, height): # centers the app to your pc res
     root.geometry(f"{width}x{height}+{x}+{y}")
 
     
-center_window(app, 400, 600)
+center_window(app, 350, 600)
 app.resizable(False, False) # makes it unable to resize the app
 app.title("PyQuCryptor") # title 
 value=" 🔒 Encrypt File " # sets value for line below
 selectmodecmd(value) # selects encrypt screen first, if this is not here then it will be a blank screen then give a error
+
+width, height = 350, 600
+
+start_color_hex = "#0063C4"  # top color
+end_color_hex = "#010810"    # bottem color
+
+start_color = tuple(int(start_color_hex[i:i + 2], 16) for i in (1, 3, 5))
+end_color = tuple(int(end_color_hex[i:i + 2], 16) for i in (1, 3, 5))
+
+img = Image.new('RGBA', (width, height))
+draw = ImageDraw.Draw(img)
+
+for y in range(height):
+    r = start_color[0] + (end_color[0] - start_color[0]) * y / height
+    g = start_color[1] + (end_color[1] - start_color[1]) * y / height
+    b = start_color[2] + (end_color[2] - start_color[2]) * y / height
+    for x in range(width):
+        draw.point((x, y), fill=(int(r), int(g), int(b), 255))
 customtkinter.set_appearance_mode("dark")
 app.mainloop()
