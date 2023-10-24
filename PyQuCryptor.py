@@ -10,10 +10,10 @@ from PIL import Image, ImageDraw
 
 ## Since I have no idea how to do version control
 about_txt = """\
-PyQuCryptor Build 2023-10-23.lpt_main.rc4.v42
+PyQuCryptor Build 2023-10-24.gpc_main.rc4.v45
 Made by: Jinghao Li, Kekoa Dang, Skidaux
 License: BSD 3-Clause No Nuclear License 2014 
-Date of programming: 2023-10-23
+Date of programming: 2023-10-24
 Programming language: Python 3.11 (Compatible with Python 3.12 with SetupTools)
 Why did we do this: No idea"""
 
@@ -36,8 +36,11 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABI
 You acknowledge that this software is not designed, licensed or intended for use in the design, construction, operation or maintenance of any nuclear facility."""
 
 ## IDK what this is for now considering we've never used it
-build_string = "2023-10-23.lpt_main.rc4.v42"
+build_string = "2023-10-24.lpt_main.rc4.v45"
+
 ## But the build tag is pratically just a joke
+build_tag = ['main', 'impressive', 'rc4', 'beta 3']
+
 dev_branch = "Mainline"
 
 dev_stage = "Beta 3"
@@ -158,11 +161,11 @@ class enc_dec_obj() :
         ## Its just easier to scramble the file name first and then encrypt it
         ## because the file is getting deleted anyways
         if scramble_filename and delete_og_file :
-            path_to_file_temp = str(path_to_file).replace(basename, '') + generate_password(12, 'return') ## This works LOL
+            path_to_file_temp = str(path_to_file).replace(basename, '') + generate_rng_filename() ## This works LOL
             try : 
                 while True :
                     open(path_to_file_temp, 'rb')
-                    path_to_file_temp = str(path_to_file).replace(basename, '') + generate_password(12, 'return')
+                    path_to_file_temp = str(path_to_file).replace(basename, '') + generate_rng_filename()
             except : pass
             os.rename(path_to_file, path_to_file_temp)
             path_to_file = path_to_file_temp ## Updates the new path to the file 
@@ -215,9 +218,15 @@ class enc_dec_obj() :
         cipher = AES.new(datalist3[0], AES.MODE_CTR, nonce=datalist3[1])
         with open(path_to_file, 'rb') as plain_file :
             ## Does basically the same thing as when delete_og_file == True
-            if scramble_filename == True and delete_og_file == False :
-                scrambled_filename = generate_password(12, 'return') ## This works LOL
-                path_to_file = str(path_to_file).replace(basename, '') + scrambled_filename ## This also works LOL
+            if scramble_filename and delete_og_file == False :
+                path_to_file = str(path_to_file).replace(basename, '') + generate_rng_filename() 
+                try : 
+                    while True :
+                        open(path_to_file, 'r')
+                        path_to_file = str(path_to_file).replace(basename, '') + generate_rng_filename() 
+                except : 
+                    pass
+
             with open(path_to_file + '.encr', 'wb') as encrypted_file :
 
                 ## Password salt
@@ -355,7 +364,6 @@ class enc_dec_obj() :
 
         messagebox.showinfo(title="PyQucryptor: Decryption", message= "Finished Decryption of file(s).")
 
-
 def hash_object(object_to_hash=None, file_path=None, mode="r") :
     global hashtemp
     ## But heres the API doc anyways, if you specify the object_to_hash, then its going to be using the older hash algo
@@ -448,6 +456,9 @@ def generate_password(pwd_length = 16, options = None):
         password_prompt.delete(0, tk.END)
         password_prompt.insert(0, password)
 
+def generate_rng_filename(file_name_length = 12) :
+    return ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(file_name_length)) ## What the hell is this line of code
+
 def update_config_status() :
     global user_config_delete_og_file_when_encrypting, user_config_delete_og_file_when_decrypting, user_config_scramble_filename
     user_config_delete_og_file_when_encrypting = user_config_file['Delete_og_file_when_encrypting']
@@ -464,7 +475,7 @@ def check_for_updates() :
         messagebox.showwarning(title="PyQuCryptor: Warning", message='PyQyCryptor has reached End-of-Life. It is no longer maintained! Thanks for using the software!') 
 
     if str(requests.get("http://randomperson.net/pyqucryptor/" + build_string)) == '<Response [404]>' :
-        if messagebox.askyesno("PyQuCryptor: Info", 'An update is Available, would you like to visit the github page?') :
+        if messagebox.askyesno("PyQuCryptor: Info", 'An update is available, would you like to visit the github page?') :
             webbrowser.open("https://github.com/IDoUseLinux/PyQuCryptor/")
 
 def reset_config() :
@@ -557,24 +568,46 @@ def decryptcmd():
 def quit_program():
     app.quit()
 
+## This is more GUI stuff but we need these variables to be defined first
+is_on_settings_menu = True ## Sets it to true so we can generate the switcher in the first place
+screen_state = None
+
 ## GUI stuff
 def settingscmd():
+    global encrypt_button, encryptupload_button, file_path_label, options_button
+    global password_prompt, set_password, generate_password_button, applabelname
+    global is_on_settings_menu
+    is_on_settings_menu = True
 
-    try : # removes encrypt screen
+    try: # removes encrypt screen
+        selectmode.pack_forget()
         encrypt_button.pack_forget()
         password_prompt.pack_forget()
         set_password.pack_forget()
         encryptupload_button.pack_forget()
         file_path_label.pack_forget()
         generate_password_button.pack_forget()
-        selectmode.pack_forget()
-    except :
-        #print("got error passing")
-        pass
+        applabelname.pack_forget()
 
-def selectmodecmd(value): # select what screen your on encrypt / decrypt
-    global encrypt_button, encryptupload_button, file_path_label
-    global password_prompt, set_password, generate_password_button
+        topframe = customtkinter.CTkFrame(app, width=400, height=74, fg_color="#192E45", corner_radius=0)
+        topframe.place(x=0, y=0)
+
+        applabelname = customtkinter.CTkLabel(app, text="Settings", bg_color="#192E45", text_color="white", font=("Arial",30, "bold"))
+        applabelname.pack(side=tk.TOP, pady=(10,0), padx=(20,0), anchor=tk.NW)
+        applabelname.place(x = 40, y = 35)
+
+        
+        encrypt_button = customtkinter.CTkButton(app, text="Back", font=("Arial", 25, "bold"), fg_color="#E34039", command=selectmodecmd, height=50, width=325)
+        encrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)      
+    except Exception as error_value :
+        print("got error passing")
+        print(error_value)
+    
+def selectmodecmd(value = None): # select what screen your on encrypt / decrypt
+    global encrypt_button, encryptupload_button, file_path_label, options_button
+    global password_prompt, set_password, generate_password_button, applabelname
+    global screen_state, selectmode, is_on_settings_menu
+    if value == None : value = screen_state
     try: # removes encrypt screen
         encrypt_button.pack_forget()
         password_prompt.pack_forget()
@@ -584,6 +617,13 @@ def selectmodecmd(value): # select what screen your on encrypt / decrypt
         generate_password_button.pack_forget()
     except:
         pass
+    if is_on_settings_menu :
+        selectmode = customtkinter.CTkSegmentedButton(app, values=[" 🔒 Encrypt File ", " 🔓 Decrypt File "], font=("Arial", 20, "bold"),
+                                                selected_color="#393939", fg_color="#1A1A1A", unselected_color="#141414", unselected_hover_color="#2E2E2E", selected_hover_color="#393939",
+                                                    border_width=7, corner_radius=13, height=50, bg_color="#192E45", variable=autoselectmode, width=325, command=selectmodecmd)
+        selectmode.pack(side=customtkinter.TOP, padx=10, pady=(100,0)) 
+        is_on_settings_menu = False
+
     if value == " 🔓 Decrypt File ": # decrypt screen
 
         topframe = customtkinter.CTkFrame(app, width=400, height=74, fg_color="#44AE4E", corner_radius=0)
@@ -609,9 +649,12 @@ def selectmodecmd(value): # select what screen your on encrypt / decrypt
         encryptupload_button = customtkinter.CTkButton(app, text="Select Encrypted File", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=encryptupload, height=25, width=325)
         encryptupload_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
 
-        file_path_label = customtkinter.CTkEntry(app, placeholder_text="Encypted File Path", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
-        file_path_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER)    
-    else: # encrypt screen
+        file_path_label = customtkinter.CTkEntry(app, placeholder_text="Encrypted File Path", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
+        file_path_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER) 
+        screen_state = " 🔓 Decrypt File "
+
+
+    elif value == " 🔒 Encrypt File ": # encrypt screen
         topframe = customtkinter.CTkFrame(app, width=400, height=74, fg_color="#E34039", corner_radius=0)
         topframe.place(x=0, y=0)
         options_button = customtkinter.CTkButton(app, text="⚙️", font=("Arial", 30), hover_color="#E34039", bg_color="#E34039", fg_color="#E34039", command=settingscmd, height=30, width=30)
@@ -622,7 +665,7 @@ def selectmodecmd(value): # select what screen your on encrypt / decrypt
         applabelname.pack(side=tk.TOP, pady=(10,0), padx=(20,0), anchor=tk.NW)
         applabelname.place(x = 20, y = 20)
 
-        encrypt_button = customtkinter.CTkButton(app, text="🔒 Encrypt File", font=("Arial", 22, "bold") ,fg_color="#44AD4D", bg_color="#192E45", hover_color="#28482B", command=encryptcmd, height=50, width=325)
+        encrypt_button = customtkinter.CTkButton(app, text="🔒 Encrypt File", font=("Arial", 25, "bold") ,fg_color="#44AD4D", bg_color="#192E45", hover_color="#28482B", command=encryptcmd, height=50, width=325)
         encrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)    
 
         generate_password_button = customtkinter.CTkButton(app, text="Generate Password", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=generate_password, height=25, width=325)
@@ -638,17 +681,19 @@ def selectmodecmd(value): # select what screen your on encrypt / decrypt
         encryptupload_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
 
         file_path_label = customtkinter.CTkEntry(app, placeholder_text="File Path", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
-        file_path_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER)  
+        file_path_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER)
+        screen_state = " 🔒 Encrypt File "
     
-        
+    print("\n\n\n\n\nIs screen Encrypt menu?\n")
+    print(value == " 🔒 Encrypt File ")
+    print("Is screen Decrypt menu?\n")
+    print(value == " 🔓 Decrypt File ")
+
 mainframe = customtkinter.CTkFrame(app, width=400, height=600, fg_color="#192E45", corner_radius=0)
 mainframe.place(x=0, y=0)
 
 autoselectmode = customtkinter.StringVar(value=" 🔒 Encrypt File ")
-selectmode = customtkinter.CTkSegmentedButton(app, values=[" 🔒 Encrypt File ", " 🔓 Decrypt File "], font=("Arial", 20, "bold"),
-                                              selected_color="#393939", fg_color="#1A1A1A", unselected_color="#141414", unselected_hover_color="#2E2E2E", selected_hover_color="#393939",
-                                                border_width=7, corner_radius=13, height=50, bg_color="#192E45", variable=autoselectmode, width=325, command=selectmodecmd)
-selectmode.pack(side=customtkinter.TOP, padx=10, pady=(100,0)) 
+
 
 
 def center_window(root, width, height): # centers the app to your pc res
