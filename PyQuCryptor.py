@@ -10,10 +10,10 @@ from PIL import Image, ImageDraw
 
 ## Since I have no idea how to do version control
 about_txt = """\
-PyQuCryptor Build 2023-10-23.lpt_main.rc4.v22
+PyQuCryptor Build 2023-10-23.lpt_main.rc4.v42
 Made by: Jinghao Li, Kekoa Dang, Skidaux
 License: BSD 3-Clause No Nuclear License 2014 
-Date of programming: 2023-10-21
+Date of programming: 2023-10-23
 Programming language: Python 3.11 (Compatible with Python 3.12 with SetupTools)
 Why did we do this: No idea"""
 
@@ -36,7 +36,7 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABI
 You acknowledge that this software is not designed, licensed or intended for use in the design, construction, operation or maintenance of any nuclear facility."""
 
 ## IDK what this is for now considering we've never used it
-build_string = "2023-10-23.lpt_main.rc4.v22"
+build_string = "2023-10-23.lpt_main.rc4.v42"
 ## But the build tag is pratically just a joke
 dev_branch = "Mainline"
 
@@ -45,6 +45,7 @@ dev_stage = "Beta 3"
 ## Frontend stuff
 app = customtkinter.CTk()
 customtkinter.deactivate_automatic_dpi_awareness()
+has_shown_program_status = False
 
 ## Jesus these variable names are stupid but you understand them... right?
 ## but these are the default settings for the app
@@ -92,19 +93,6 @@ except :
     user_config_allow_web_connection = user_config_file['Allow_web_connections']
     program_current_end_of_life_status = user_config_file['End_of_life_status']
 
-## Web stuff
-if user_config_allow_web_connection :
-    ## If this returns 404, then its not eol, but if it doesn't it is in eol
-    if str(requests.get("http://randomperson.net/pyqucryptor/eol.txt")) != "<Response [404]>" :
-        program_current_end_of_life_status = True
-        user_config_file['End_of_life_status'] = True
-        messagebox.showwarning(title="PyQuCryptor: Warning", message='PyQyCryptor has reached End-of-Life. It is no longer maintained! Thanks for using the software!') 
-
-    if str(requests.get("http://randomperson.net/pyqucryptor/" + build_string)) == '<Response [404]>' :
-        if messagebox.askyesno("PyQuCryptor: Info", 'An update is Available, would you like to visit the github page?') :
-            webbrowser.open("https://github.com/IDoUseLinux/PyQuCryptor/")
-
-print(str(requests.get("http://randomperson.net/pyqucryptor/" + build_string)) == '<Response [404]>')
 ## Currently AES-256-CTR is the only cipher suit supported 
 ## Here is the defining that comes before everything else
 
@@ -461,7 +449,23 @@ def generate_password(pwd_length = 16, options = None):
         password_prompt.insert(0, password)
 
 def update_config_status() :
-    pass
+    global user_config_delete_og_file_when_encrypting, user_config_delete_og_file_when_decrypting, user_config_scramble_filename
+    user_config_delete_og_file_when_encrypting = user_config_file['Delete_og_file_when_encrypting']
+    user_config_delete_og_file_when_decrypting = user_config_file['Delete_og_file_when_decrypting']
+    user_config_scramble_filename = user_config_file["Scramble_filename"]
+
+## Web stuff
+def check_for_updates() :
+    global program_current_end_of_life_status
+    ## If this returns 404, then its not eol, but if it doesn't it is in eol
+    if str(requests.get("http://randomperson.net/pyqucryptor/eol.txt")) != "<Response [404]>" :
+        program_current_end_of_life_status = True
+        user_config_file['End_of_life_status'] = True
+        messagebox.showwarning(title="PyQuCryptor: Warning", message='PyQyCryptor has reached End-of-Life. It is no longer maintained! Thanks for using the software!') 
+
+    if str(requests.get("http://randomperson.net/pyqucryptor/" + build_string)) == '<Response [404]>' :
+        if messagebox.askyesno("PyQuCryptor: Info", 'An update is Available, would you like to visit the github page?') :
+            webbrowser.open("https://github.com/IDoUseLinux/PyQuCryptor/")
 
 def reset_config() :
     with open(user_config_file_path, 'w') as config_file :
@@ -555,6 +559,7 @@ def quit_program():
 
 ## GUI stuff
 def settingscmd():
+
     try : # removes encrypt screen
         encrypt_button.pack_forget()
         password_prompt.pack_forget()
@@ -634,6 +639,7 @@ def selectmodecmd(value): # select what screen your on encrypt / decrypt
 
         file_path_label = customtkinter.CTkEntry(app, placeholder_text="File Path", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
         file_path_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER)  
+    
         
 mainframe = customtkinter.CTkFrame(app, width=400, height=600, fg_color="#192E45", corner_radius=0)
 mainframe.place(x=0, y=0)
@@ -696,6 +702,10 @@ for y in range(height):
         draw.point((x, y), fill=(int(r), int(g), int(b), 255))
 
 customtkinter.set_appearance_mode("dark")
+## We check for updates before starting the app
+## if the user allows for it.
+if user_config_allow_web_connection :
+    check_for_updates()
 
 app.mainloop()
 
