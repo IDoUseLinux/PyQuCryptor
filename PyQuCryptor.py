@@ -9,7 +9,7 @@ from Crypto.Random import get_random_bytes
 
 ## Since I have no idea how to do version control
 about_txt = """\
-PyQuCryptor Build 2023-10-30.gpc_stable.rc4.v369-rtm
+PyQuCryptor Build 2023-10-30.gpc_stable.rc4.v370-rtm
 Made by: Jinghao Li (Backend, frontend, head-developer), Kekoa Dang (Frontend), Zoe Murata (Logo designer)
 License: BSD 3-Clause No Nuclear License 2014 
 Date of programming: 2023-10-30
@@ -48,7 +48,7 @@ with open(resource_path("resources/other_licenses.txt"), 'r') as license_file:
     other_licenses = license_file.read()
 
 ## IDK what this is for now considering we've never used it
-build_string = "2023-10-30.gpc_stable.rc4.v369-rtm"
+build_string = "2023-10-30.gpc_stable.rc4.v370-rtm"
 
 ## But the build tag is pratically just a joke
 build_tag = ['stable', 'impressive', 'rc4', 'rtm']
@@ -353,7 +353,8 @@ class enc_dec_obj() :
                     open(str.replace(path_to_file, ".encr", ''))
                     if messagebox.askyesno(title="PyQucryptor: File Already Exists Error", message="A file with the same name already exists. Do you want to overwrite?") :
                         os.replace(path_to_file + ".temp", str.replace(path_to_file, ".encr", ''))
-                    else : os.remove(path_to_file + ".temp")
+                    else : 
+                        os.remove(path_to_file + ".temp")
                 except FileNotFoundError: 
                     os.rename(path_to_file + ".temp", str.replace(path_to_file, ".encr", ''))
             
@@ -747,7 +748,7 @@ def selectmodecmd(value = None): ## Select what screen your on encrypt / decrypt
         set_password = customtkinter.CTkLabel(app, text="Enter Your Password", bg_color="#192E45", font=("Arial", 18, "bold"))
         set_password.pack(side=tk.BOTTOM, padx=(30), pady=(0,2), anchor=tk.W)   
             
-        encryptupload_button = customtkinter.CTkButton(app, text="Select Encrypted File", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=encryptupload, height=25, width=325)
+        encryptupload_button = customtkinter.CTkButton(app, text="Select Encrypted File", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=decryptfileupload, height=25, width=325)
         encryptupload_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
 
         file_path_label = customtkinter.CTkEntry(app, placeholder_text="Encrypted File Path", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
