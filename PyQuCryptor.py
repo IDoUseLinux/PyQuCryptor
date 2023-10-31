@@ -9,15 +9,18 @@ from Crypto.Random import get_random_bytes
 
 ## Since I have no idea how to do version control
 about_txt = """\
-PyQuCryptor Build 2023-10-30.gpc_stable.rc4.v370-rtm
+PyQuCryptor Build 2023-10-31.gpc_stable.rc4.v373-rtm
 Made by: Jinghao Li (Backend, frontend, head-developer), Kekoa Dang (Frontend), Zoe Murata (Logo designer)
 License: BSD 3-Clause No Nuclear License 2014 
-Date of programming: 2023-10-30
+Date of programming: 2023-10-31
 Programming language: Python 3.12 (Compatible with Python 3.11)
 Why did we do this: No idea"""
 
 ## Yes the license is a joke but it is a real license used by Oracle somehow
 license_txt = """\
+ALL SOFTWARE BELONGS TO THEIR RESPECTIVE OWNERS!!!
+I give full consent for Congress to use this app to market the congressional app challenge in any way they seem fit as long as they include the copyright notice!!!
+
 BSD 3-Clause No Nuclear License 2014
 © 2023 IDoUseLinux/Jinghao Li (https://randomperson.net/), SmashTheCoder1/Kekoa Dang
 The use of this software is subject to license terms.
@@ -48,14 +51,7 @@ with open(resource_path("resources/other_licenses.txt"), 'r') as license_file:
     other_licenses = license_file.read()
 
 ## IDK what this is for now considering we've never used it
-build_string = "2023-10-30.gpc_stable.rc4.v370-rtm"
-
-## But the build tag is pratically just a joke
-build_tag = ['stable', 'impressive', 'rc4', 'rtm']
-
-dev_branch = "Stable"
-
-dev_stage = "rtm"
+build_string = "2023-10-31.gpc_stable.rc4.v373-rtm"
 
 ## Frontend stuff
 app = customtkinter.CTk()
@@ -140,7 +136,7 @@ def request_uac_elevation() :
     else: return True
 
 class enc_dec_obj() :
-    cryptographic_library_version = "Version 2023-10-30.gpc_stable.rc4.v369-rtm"
+    cryptographic_library_version = "Version 2023-10-31.gpc_stable.rc4.v373-rtm"
     
     def __init__(self) -> None:
         pass
@@ -232,22 +228,17 @@ class enc_dec_obj() :
                 except : pass
 
             with open(path_to_file + '.encr', 'wb') as encrypted_file :
-
                 ## Password salt
                 encrypted_file.write(datalist[0])
-
                 ## Non-encrypted cipher nonce
                 encrypted_file.write(datalist[1])
-
                 ## Hash of encrypted file header
                 encrypted_file.write(datalist[2])
 
                 ## Encrypted 32-byte Encryption key
                 encrypted_file.write(datalist2[0])
-
                 ## Encrypted 11-byte Nonce
                 encrypted_file.write(datalist2[1])
-
                 ## Encrypted SHA3-512 Hash/Checksum
                 encrypted_file.write(datalist2[2])
 
@@ -443,14 +434,14 @@ def check_for_updates(tell=True) :
     global program_current_end_of_life_status
     ___ = True ## I just need a variable...
     ## If this returns 404, then its not eol, but if it doesn't it is in eol
-    if str(requests.get("http://randomperson.net/pyqucryptor/eol.txt")) != "<Response [404]>" :
+    if str(requests.get("https://randomperson.net/pyqucryptor/eol.txt")) != "<Response [404]>" :
         program_current_end_of_life_status = True
         user_config_file['End_of_life_status'] = True
         messagebox.showwarning(title="PyQuCryptor: Status Warning", message='PyQyCryptor has reached End-of-Life. It is no longer maintained! Thanks for using the software!') 
         ___ = False
     else : pass
     
-    if str(requests.get("http://randomperson.net/pyqucryptor/" + build_string)) == '<Response [404]>' :
+    if str(requests.get("https://randomperson.net/pyqucryptor/" + build_string)) == '<Response [404]>' :
         if messagebox.askyesno("PyQuCryptor: Updates", 'An update is available, would you like to visit the github page?') :
             webbrowser.open("https://github.com/IDoUseLinux/PyQuCryptor/")
         ___ = False
@@ -518,6 +509,7 @@ def encryptupload():
 
 def decryptfileupload() :
     file_path = filedialog.askopenfilename(title="Please Select the encrypted file", filetypes=[("ENCR files", "*.encr")]) ## Default file extension is .encr
+    file_path_label.delete(0, tk.END)
     file_path_label.insert(0,file_path)
 
 def encryptcmd(): #encrypt button command + 3 checks to make sure everything is there
@@ -545,7 +537,6 @@ def encryptcmd(): #encrypt button command + 3 checks to make sure everything is 
         messagebox.showerror(title="PyQuCryptor: Password Error", message=error_message)
 
     else: # File path + password
-        password_prompt.delete(0, tk.END)
         file_path_label.delete(0, tk.END)
         password_prompt.delete(0, tk.END)
         encryptor = enc_dec_obj()
@@ -815,12 +806,6 @@ value=" 🔒 Encrypt File " ## sets value for line below
 selectmodecmd(value) ## selects encrypt screen first, if this is not here then it will be a blank screen then give a error
 
 width, height = 350, 600
-
-start_color_hex = "#0063C4"  ## top color
-end_color_hex = "#010810"    ## bottem color
-
-start_color = tuple(int(start_color_hex[i:i + 2], 16) for i in (1, 3, 5))
-end_color = tuple(int(end_color_hex[i:i + 2], 16) for i in (1, 3, 5))
 
 customtkinter.set_appearance_mode("dark")
 ## We check for updates before starting the app
