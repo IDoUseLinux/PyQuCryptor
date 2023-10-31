@@ -9,7 +9,7 @@ from Crypto.Random import get_random_bytes
 
 ## Since I have no idea how to do version control
 about_txt = """\
-PyQuCryptor Build 2023-10-31.gpc_stable.rc4.v373-rtm
+PyQuCryptor Build 2023-10-31.gpc_stable.rc4.v374-rtm
 Made by: Jinghao Li (Backend, frontend, head-developer), Kekoa Dang (Frontend), Zoe Murata (Logo designer)
 License: BSD 3-Clause No Nuclear License 2014 
 Date of programming: 2023-10-31
@@ -51,7 +51,7 @@ with open(resource_path("resources/other_licenses.txt"), 'r') as license_file:
     other_licenses = license_file.read()
 
 ## IDK what this is for now considering we've never used it
-build_string = "2023-10-31.gpc_stable.rc4.v373-rtm"
+build_string = "2023-10-31.gpc_stable.rc4.v374-rtm"
 
 ## Frontend stuff
 app = customtkinter.CTk()
@@ -136,7 +136,7 @@ def request_uac_elevation() :
     else: return True
 
 class enc_dec_obj() :
-    cryptographic_library_version = "Version 2023-10-31.gpc_stable.rc4.v373-rtm"
+    cryptographic_library_version = "Version 2023-10-31.gpc_stable.rc4.v374-rtm"
     
     def __init__(self) -> None:
         pass
@@ -158,6 +158,10 @@ class enc_dec_obj() :
                 raise FileNotFoundError
         except FileNotFoundError :
             raise FileNotFoundError("The requested file for encryption does not exist.")
+        try :
+            if os.stat(path_to_file) > 17179869184 :
+                messagebox.showwarning(title="PyQuCryptor: Large File size", message="PyQuCryptor can become unstable when dealing with large file sizes.")
+        except : pass
         basename = os.path.basename(path_to_file)
 
         ## Its just easier to scramble the file name first and then encrypt it
@@ -258,7 +262,11 @@ class enc_dec_obj() :
         ## requires way less inputs inorder to get an output
         datalist = []
         datalist2 = []
-        
+        try :
+            if os.stat(path_to_file) > 17179869184 :
+                messagebox.showwarning(title="PyQuCryptor: Large File size", message="PyQuCryptor can become unstable when dealing with large file sizes.")
+        except : pass
+
         try : 
             with open(path_to_file, 'rb') as encr_key_loc :
                 ## Password Salt
@@ -434,18 +442,22 @@ def check_for_updates(tell=True) :
     global program_current_end_of_life_status
     ___ = True ## I just need a variable...
     ## If this returns 404, then its not eol, but if it doesn't it is in eol
-    if str(requests.get("https://randomperson.net/pyqucryptor/eol.txt")) != "<Response [404]>" :
-        program_current_end_of_life_status = True
-        user_config_file['End_of_life_status'] = True
-        messagebox.showwarning(title="PyQuCryptor: Status Warning", message='PyQyCryptor has reached End-of-Life. It is no longer maintained! Thanks for using the software!') 
+    try : 
+        if str(requests.get("https://randomperson.net/pyqucryptor/eol.txt")) != "<Response [404]>" :
+            program_current_end_of_life_status = True
+            user_config_file['End_of_life_status'] = True
+            messagebox.showwarning(title="PyQuCryptor: Status Warning", message='PyQyCryptor has reached End-of-Life. It is no longer maintained! Thanks for using the software though!') 
+            ___ = False
+        else : pass
+        
+        if str(requests.get("https://randomperson.net/pyqucryptor/" + build_string)) == '<Response [404]>' :
+            if messagebox.askyesno("PyQuCryptor: Updates", 'An update is available, would you like to visit the github page?') :
+                webbrowser.open("https://github.com/IDoUseLinux/PyQuCryptor/")
+            ___ = False
+        else : pass
+    except : 
         ___ = False
-    else : pass
-    
-    if str(requests.get("https://randomperson.net/pyqucryptor/" + build_string)) == '<Response [404]>' :
-        if messagebox.askyesno("PyQuCryptor: Updates", 'An update is available, would you like to visit the github page?') :
-            webbrowser.open("https://github.com/IDoUseLinux/PyQuCryptor/")
-        ___ = False
-    else : pass
+        messagebox.showwarning(title="PyQuCryptor: Updates", message="Unable to check for updates, please check your internet connection and try again.")
 
     if ___ == True and tell == True: 
         messagebox.showinfo(title="PyQuCryptor: Updates", message="PyQuCryptor is up-to-date!")
@@ -508,7 +520,7 @@ def encryptupload():
     file_path_label.insert(0,file_path)
 
 def decryptfileupload() :
-    file_path = filedialog.askopenfilename(title="Please Select the encrypted file", filetypes=[("ENCR files", "*.encr")]) ## Default file extension is .encr
+    file_path = filedialog.askopenfilename(title="Please Select the encrypted file", filetypes=[("ENCR files", "*.encr"), ("All files", "*.*")]) ## Default file extension is .encr
     file_path_label.delete(0, tk.END)
     file_path_label.insert(0,file_path)
 
@@ -810,6 +822,7 @@ width, height = 350, 600
 customtkinter.set_appearance_mode("dark")
 ## We check for updates before starting the app
 ## if the user allows for it.
+
 if user_config_allow_web_connection :
     check_for_updates(tell=False)
 
