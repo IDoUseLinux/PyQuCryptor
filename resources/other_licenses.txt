@@ -1,0 +1,9 @@
+Libraries used:
+PyCryptoDome, Public Domain, URL = https://pycryptodome.readthedocs.io/en/latest/src/license.html
+customTKinter, Copyright (c) 2023 Tom Schimansky, MIT License, URL = https://customtkinter.tomschimansky.com/
+Requests, Copyright (c) 2019 Kenneth Reitz, Apache 2.0 License, URL = https://pypi.org/project/requests/
+Pillow, Copyright (c) 1997-2011 by Secret Labs AB, Copyright (c) 1995-2011 by Fredrik Lundh
+PIL, Copyright (c) 2010-2023 by Jeffrey A. Clark and contributors, Historical Permission Notice and Disclaimer (HPND), URL = https://pypi.org/project/Pillow/
+SetUpTools, Copyright (c) 2023 SetUpTools and its contributors, MIT License, URL = https://pypi.org/project/setuptools/
+PyInstaller, Copyright (c) 2010-2023, PyInstaller Development Team, Copyright (c) 2005-2009, Giovanni Bajo URL = https://pyinstaller.org/en/stable/
+Previous work on PyInstaller, (c) 2002 McMillan Enterprises, Inc.
