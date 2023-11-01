@@ -9,10 +9,10 @@ from Crypto.Random import get_random_bytes
 
 ## Since I have no idea how to do version control
 about_txt = """\
-PyQuCryptor Build 2023-10-31.gpc_stable.rc4.v374-rtm
+PyQuCryptor Build 2023-11-01.gpc_stable.rc4.v375-rtm
 Made by: Jinghao Li (Backend, frontend, head-developer), Kekoa Dang (Frontend), Zoe Murata (Logo designer)
 License: BSD 3-Clause No Nuclear License 2014 
-Date of programming: 2023-10-31
+Date of programming: 2023-11-01
 Programming language: Python 3.12 (Compatible with Python 3.11)
 Why did we do this: No idea"""
 
@@ -51,7 +51,7 @@ with open(resource_path("resources/other_licenses.txt"), 'r') as license_file:
     other_licenses = license_file.read()
 
 ## IDK what this is for now considering we've never used it
-build_string = "2023-10-31.gpc_stable.rc4.v374-rtm"
+build_string = "2023-11-01.gpc_stable.rc4.v375-rtm"
 
 ## Frontend stuff
 app = customtkinter.CTk()
@@ -643,7 +643,7 @@ def settingscmd():
         settings_all_idk_bothering_coming_up_with_variable_names_any_more.append(photo_thingy_label)
 
         ## Draws the rest of the settings menu
-        settings_list = ["Delete Orignal (ENC)", "Delete Original (DEC)", "Randomize Filename", "Auto-Update"]
+        settings_list = ["Delete Original (ENC)", "Delete Original (DEC)", "Randomize Filename", "Auto-Update"]
         settings_function_list = [update_delete_og_enc, update_delete_og_dec, update_scramble_filename, update_auto_update]
         settings_button_status = []
         for idk in [user_config_file['Delete_og_file_when_encrypting'], user_config_file['Delete_og_file_when_decrypting'], user_config_file["Scramble_filename"], user_config_file["Allow_web_connections"]] : ## Please kill this program
