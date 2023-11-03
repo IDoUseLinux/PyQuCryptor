@@ -9,11 +9,11 @@ from Crypto.Random import get_random_bytes
 
 ## Since I have no idea how to do version control
 about_txt = """\
-PyQuCryptor Build 2023-11-01.gpc_stable.rc4.v375-rtm
+PyQuCryptor Build 2023-11-03.gpc_main.rc4.v376
 Made by: Jinghao Li (Backend, frontend, head-developer), Kekoa Dang (Frontend), Zoe Murata (Logo designer)
 License: BSD 3-Clause No Nuclear License 2014 
 Date of programming: 2023-11-01
-Programming language: Python 3.12 (Compatible with Python 3.11)
+Programming language: Python 3.12
 Why did we do this: No idea"""
 
 ## Yes the license is a joke but it is a real license used by Oracle somehow
@@ -50,8 +50,8 @@ def resource_path(relative_path):
 with open(resource_path("resources/other_licenses.txt"), 'r') as license_file:
     other_licenses = license_file.read()
 
-## IDK what this is for now considering we've never used it
-build_string = "2023-11-01.gpc_stable.rc4.v375-rtm"
+build_string = "Build 2023-11-03.gpc_main.rc4.v376"
+is_dev_version = True
 
 ## Frontend stuff
 app = customtkinter.CTk()
@@ -136,7 +136,7 @@ def request_uac_elevation() :
     else: return True
 
 class enc_dec_obj() :
-    cryptographic_library_version = "Version 2023-10-31.gpc_stable.rc4.v374-rtm"
+    cryptographic_library_version = "Version 2023-11-03.gpc_main.rc4.v376"
     
     def __init__(self) -> None:
         pass
@@ -152,10 +152,7 @@ class enc_dec_obj() :
                 pass
         except PermissionError :
             request_uac_elevation()
-            try :
-                with open(path_to_file, 'rb') : pass
-            except FileNotFoundError :
-                raise FileNotFoundError
+            with open(path_to_file, 'rb') : pass
         except FileNotFoundError :
             raise FileNotFoundError("The requested file for encryption does not exist.")
         try :
@@ -442,25 +439,26 @@ def check_for_updates(tell=True) :
     global program_current_end_of_life_status
     ___ = True ## I just need a variable...
     ## If this returns 404, then its not eol, but if it doesn't it is in eol
-    try : 
-        if str(requests.get("https://randomperson.net/pyqucryptor/eol.txt")) != "<Response [404]>" :
-            program_current_end_of_life_status = True
-            user_config_file['End_of_life_status'] = True
-            messagebox.showwarning(title="PyQuCryptor: Status Warning", message='PyQyCryptor has reached End-of-Life. It is no longer maintained! Thanks for using the software though!') 
+    if not is_dev_version :
+        try : 
+            if str(requests.get("https://randomperson.net/pyqucryptor/eol.txt")) != "<Response [404]>" :
+                program_current_end_of_life_status = True
+                user_config_file['End_of_life_status'] = True
+                messagebox.showwarning(title="PyQuCryptor: Status Warning", message='PyQyCryptor has reached End-of-Life. It is no longer maintained! Thanks for using the software though!') 
+                ___ = False
+            else : pass
+            
+            if str(requests.get("https://randomperson.net/pyqucryptor/" + build_string)) == '<Response [404]>' :
+                if messagebox.askyesno("PyQuCryptor: Updates", 'An update is available, would you like to visit the github page?') :
+                    webbrowser.open("https://github.com/IDoUseLinux/PyQuCryptor/")
+                ___ = False
+            else : pass
+        except : 
             ___ = False
-        else : pass
-        
-        if str(requests.get("https://randomperson.net/pyqucryptor/" + build_string)) == '<Response [404]>' :
-            if messagebox.askyesno("PyQuCryptor: Updates", 'An update is available, would you like to visit the github page?') :
-                webbrowser.open("https://github.com/IDoUseLinux/PyQuCryptor/")
-            ___ = False
-        else : pass
-    except : 
-        ___ = False
-        messagebox.showwarning(title="PyQuCryptor: Updates", message="Unable to check for updates, please check your internet connection and try again.")
+            messagebox.showwarning(title="PyQuCryptor: Updates", message="Unable to check for updates, please check your internet connection and try again.")
 
-    if ___ == True and tell == True: 
-        messagebox.showinfo(title="PyQuCryptor: Updates", message="PyQuCryptor is up-to-date!")
+        if ___ == True and tell == True: 
+            messagebox.showinfo(title="PyQuCryptor: Updates", message="PyQuCryptor is up-to-date!")
 
 ## LMAO Kekoa, you thought u were smart for using lists, we still gotta define these function names
 def update_scramble_filename() :
