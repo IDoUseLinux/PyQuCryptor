@@ -1,6 +1,6 @@
 ## PyQuCryptor for Windows 10/11
 import customtkinter, secrets, string, json, webbrowser, requests ## Random stuff for GUI and backend
-import os, threading, ctypes, hashlib, sys  ## Crypto stuff 
+import os, threading, ctypes, hashlib, sys ## Crypto stuff 
 import tkinter as tk ## More GUI Stuff
 from PIL import Image
 from tkinter import messagebox, filedialog
@@ -8,13 +8,19 @@ from Crypto.Cipher import AES ## More Crypto stuff
 from Crypto.Random import get_random_bytes
 
 ## Since I have no idea how to do version control
-about_txt = """\
-PyQuCryptor Build 2023-11-03.gpc_main.rc4.v376
+build_string = "Build 2023-11-04.gpc_main.rc4.v400"
+is_dev_version = True
+version = "V1.4.0"
+
+about_txt = f"""\
+PyQuCryptor {version}
+PyQuCryptor {build_string}
 Made by: Jinghao Li (Backend, frontend, head-developer), Kekoa Dang (Frontend), Zoe Murata (Logo designer)
 License: BSD 3-Clause No Nuclear License 2014 
-Date of programming: 2023-11-01
+Date of programming: 2023-11-04
 Programming language: Python 3.12
-Why did we do this: No idea"""
+Why did we do this: No idea
+Is Dev version: {is_dev_version}"""
 
 ## Yes the license is a joke but it is a real license used by Oracle somehow
 license_txt = """\
@@ -37,7 +43,7 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABI
 
 You acknowledge that this software is not designed, licensed or intended for use in the design, construction, operation or maintenance of any nuclear facility."""
 
-## We need this snippet for our program to work.
+## We need this snippet for our program to work. Yes this was stack overflow
 def resource_path(relative_path):
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
@@ -49,9 +55,6 @@ def resource_path(relative_path):
 
 with open(resource_path("resources/other_licenses.txt"), 'r') as license_file:
     other_licenses = license_file.read()
-
-build_string = "Build 2023-11-03.gpc_main.rc4.v376"
-is_dev_version = True
 
 ## Frontend stuff
 app = customtkinter.CTk()
@@ -136,7 +139,7 @@ def request_uac_elevation() :
     else: return True
 
 class enc_dec_obj() :
-    cryptographic_library_version = "Version 2023-11-03.gpc_main.rc4.v376"
+    cryptographic_library_version = "Version 2023-11-04.gpc_main.rc4.v400"
     
     def __init__(self) -> None:
         pass
@@ -351,8 +354,12 @@ class enc_dec_obj() :
                         os.replace(path_to_file + ".temp", str.replace(path_to_file, ".encr", ''))
                     else : 
                         os.remove(path_to_file + ".temp")
-                except FileNotFoundError: 
+                except FileNotFoundError : 
                     os.rename(path_to_file + ".temp", str.replace(path_to_file, ".encr", ''))
+                
+                except PermissionError :
+                    ____ = os.path.basename(path_to_file) ## Again I need a variable name
+                    messagebox.showerror(title="Decrypt Error", message=f"Unable to rename file (Is the file just called .encr?), file renamed to {____ + '.temp'}")
             
             __ = False ## I just need a variable name
             if delete_og_file == True :
@@ -398,7 +405,7 @@ def hash_object(object_to_hash=None, file_path=None, mode="r") :
         return hashed_object
     else : hashtemp = hashed_object
 
-def secure_erase(file_path, replace_with_zero = True) :
+def secure_erase(file_path, replace_with_zero = False) :
     file_size = os.path.getsize(file_path)
     if replace_with_zero == False :
         with open(file_path, 'wb') as deleting_file :
@@ -459,6 +466,8 @@ def check_for_updates(tell=True) :
 
         if ___ == True and tell == True: 
             messagebox.showinfo(title="PyQuCryptor: Updates", message="PyQuCryptor is up-to-date!")
+    else : 
+        messagebox.showinfo(title="PyQuCryptor: Updates", message="This is a developer version. This program is up-to-date!")
 
 ## LMAO Kekoa, you thought u were smart for using lists, we still gotta define these function names
 def update_scramble_filename() :
@@ -528,10 +537,18 @@ def encryptcmd(): #encrypt button command + 3 checks to make sure everything is 
     password_prompt.delete(0, tk.END)
     password_prompt.insert(0, password)
     
-    if not os.path.isfile(file_path) : # check 1 to see if the file exsisted 
-        error_message = "Error: Unknown file."
+    if file_path[len(file_path)-3:] == ".hc" :
+        if messagebox.askyesno(title="PyQuCryptor: Encrypt", message="Are you sure you want to encrypt a VeraCrypt container? VeraCrypt containers that expands can cause errors with PyQuCryptor.") :
+            pass
+        else : raise TypeError("User does not want to encrypt VeraCrypt container.")
 
-    elif password == "": # check to see if you got a password
+    if file_path == "" :
+        error_message = "Please select the file you want to encrypt."
+
+    elif not os.path.isfile(file_path) : # check 1 to see if the file exsisted 
+        error_message = "Unknown file."
+
+    elif password == "" : # Check to see if you got a password
         error_message = "Please enter a password."
 
     elif password.startswith(password[:1]*3) : ## Checks if the first 3 letters are the same b/c strong passwords
@@ -544,7 +561,7 @@ def encryptcmd(): #encrypt button command + 3 checks to make sure everything is 
         error_message = None 
 
     if error_message: # gives the error message if any
-        messagebox.showerror(title="PyQuCryptor: Password Error", message=error_message)
+        messagebox.showerror(title="PyQuCryptor: Encrypt Error", message=error_message)
 
     else: # File path + password
         file_path_label.delete(0, tk.END)
@@ -557,7 +574,10 @@ def decryptcmd():
     password = password_prompt.get()
     file_path = file_path_label.get()
 
-    if file_path[len(file_path)-5:] != ".encr" : ## This checks for whether or not the file ends in .encr and if it does not end in .encr it will rename it
+    if file_path == "" :
+        error_message = "Please select the file you want to decrypt."
+
+    elif file_path[len(file_path)-5:] != ".encr" : ## This checks for whether or not the file ends in .encr and if it does not end in .encr it will rename it
         try : 
             open(file_path + '.encr', 'rb')
             if messagebox.askyesno(title= "PyQuCryptor: File Already Exists Error", message=f"File {os.path.basename(file_path) + '.encr'} already exists. Do you want to overwrite?") : ## I know this code is ugly
@@ -567,8 +587,9 @@ def decryptcmd():
             os.rename(file_path, file_path + ".encr")
         file_path += '.encr'
 
-    if not os.path.isfile(file_path): # Check 1: to see if the file exsists
+    elif not os.path.isfile(file_path): # Check 1: to see if the file exsists
         error_message = "Error: Unknown file."
+
     elif password == "": # Check 2: to see if you got a password
         error_message = "Please enter your password."
     elif len(password) < 12 or len(password) > 50: # checks if password length is the right amount if characters
@@ -578,7 +599,7 @@ def decryptcmd():
         error_message = None
 
     if error_message: # gives the error message if any
-        messagebox.showerror(title="PyQuCryptor: Error", message=error_message)
+        messagebox.showerror(title="PyQuCryptor: Decrypt Error", message=error_message)
     else: ## File + password is ready to be used
         password_prompt.delete(0, tk.END)
         decryptor = enc_dec_obj()
@@ -591,7 +612,7 @@ screen_state = None
 def settingscmd():
     global encrypt_button, encryptupload_button, file_path_label, options_button
     global password_prompt, set_password, generate_password_button, applabelname
-    global is_on_settings_menu, user_config_file
+    global is_on_settings_menu, user_config_file, options_button
     global settings_all_idk_bothering_coming_up_with_variable_names_any_more
     is_on_settings_menu = True
 
@@ -613,6 +634,10 @@ def settingscmd():
         applabelname.pack(side=tk.TOP, padx=(10,0), pady=(25,0), anchor=tk.W)
         applabelname.place(x = 20, y = 20)
 
+        options_button = customtkinter.CTkButton(app, text="⚙️", font=("Arial", 30), hover_color="#192E45", bg_color="#2A4D73", fg_color="#2A4D73", command=selectmodecmd, height=30, width=30)
+        options_button.pack(side=tk.TOP, anchor=tk.NE) 
+        options_button.place(x = 290, y = 17)
+
         settings_button_list = []
         settings_band_list = []
         settings_band_label = []
@@ -622,19 +647,19 @@ def settingscmd():
         image = Image.open(logo_path)
         photo = customtkinter.CTkImage(image, size=(120, 120))
         
-        photo_thingy = customtkinter.CTkLabel(app, image=photo, text='', bg_color='#192E45', text_color='white', font=("Arial", 25, 'bold'))
-        photo_thingy.place(x=40, y=130)
-        photo_thingy.pack(side=tk.TOP, padx=(20,0), pady=(75,0), anchor=tk.W)
+        photo_thingy = customtkinter.CTkLabel(app, image=photo, text='', bg_color='#192E45', fg_color="#192E45", text_color='white', font=("Arial", 25, 'bold'))
+        photo_thingy.pack(side=tk.TOP, padx=(0,0), pady=(0,0), anchor=tk.W)
+        photo_thingy.place(x=-7, y=75)
 
         ## Draws PyQuCryptor
-        photo_thingy_label = customtkinter.CTkLabel(app, text="PyQuCryptor", bg_color='#192E45', text_color='white', font=('Arial', 25, 'bold'))
+        photo_thingy_label = customtkinter.CTkLabel(app, text="PyQuCryptor " + version, bg_color='#192E45', text_color='white', font=('Arial', 25, 'bold'))
         photo_thingy_label.pack(side=tk.TOP, padx=(0,0), pady=(0,0), anchor=tk.S)
-        photo_thingy_label.place(x=130, y=120)
+        photo_thingy_label.place(x=95, y=125)
 
         ## Version string
         version_txt = customtkinter.CTkLabel(app, text="Version " + build_string, bg_color="#192E45", text_color='white', font=("Arial", 15, 'bold'))
-        version_txt.place(x = 140, y = 0)
         version_txt.pack(side=tk.TOP,padx=(10,0), pady=(0,0), anchor=tk.CENTER)
+        version_txt.place(x = 20, y = 195)
 
         settings_all_idk_bothering_coming_up_with_variable_names_any_more.append(version_txt)
         settings_all_idk_bothering_coming_up_with_variable_names_any_more.append(photo_thingy)
@@ -651,7 +676,7 @@ def settingscmd():
         ## Iterate through the settings list
         for index, setting in enumerate(settings_list):
             frame = customtkinter.CTkFrame(master=app, width=350, height=50, corner_radius=0, fg_color="#2A4D73")
-            frame.place(x=0, y=225 + index * 55)  ## Adjust the y-coordinate based on the index
+            frame.place(x=0, y=220 + index * 55)  ## Adjust the y-coordinate based on the index
 
             switch = customtkinter.CTkSwitch(master=frame, text="", command=settings_function_list[index], variable=settings_button_status[index], switch_height=35, switch_width=60, onvalue="on", offvalue="off", progress_color="#44AE4E")
             switch.place(relx=0.90, rely=0.5, anchor=tk.CENTER)
@@ -663,28 +688,29 @@ def settingscmd():
             settings_button_list.append(switch)
             settings_band_label.append(frame_label)
 
-        encrypt_button = customtkinter.CTkButton(app, text="Back", font=("Arial", 25, "bold"), fg_color="#E34039", hover_color="#75322f", command=selectmodecmd, height=50, width=325)
+        encrypt_button = customtkinter.CTkButton(app, text="Back", font=("Arial", 25, "bold"), fg_color="#E34039", bg_color="#192E45", hover_color="#75322f", command=selectmodecmd, height=50, width=325, border_color="#1F6AA5")
         encrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)  
 
-        about_button = customtkinter.CTkButton(app, text="About", width=93, font=("Arial", 20, 'bold'), bg_color='#1A1A1A', command=print_ver, border_color="#192E45")
+        about_button = customtkinter.CTkButton(app, text="About", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=print_ver, border_color="#1F6AA5")
         about_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
-        about_button.place(x=30, y=450)
-        ## This one is the imposter sus sus among us funny gen z humor what am i even doing at this point
-        github = customtkinter.CTkButton(app, text="GitHub", width=92, font=("Arial", 20, 'bold'), bg_color='#1A1A1A', command=redir_to_github, border_color="#192E45")
+        about_button.place(x=30, y=445)
+
+        ## I know this one is not the same length, but I almost deleted the entire program whilst trying to make them the same size
+        github = customtkinter.CTkButton(app, text="GitHub", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=redir_to_github, border_color="#1F6AA5")
         github.pack(side=tk.BOTTOM, anchor=tk.CENTER)
-        github.place(x=130, y=450)
+        github.place(x=130, y=445)
 
-        update = customtkinter.CTkButton(app, text="Update", width=93, font=("Arial", 20, 'bold'), bg_color='#1A1A1A', command=check_for_updates, border_color="#192E45")
+        update = customtkinter.CTkButton(app, text="Update", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=check_for_updates, border_color="#1F6AA5")
         update.pack(side=tk.BOTTOM, anchor=tk.CENTER)
-        update.place(x=230, y=450)
+        update.place(x=230, y=445)
 
-        license_button = customtkinter.CTkButton(app, text="License", width=142, font=("Arial", 20, 'bold'), bg_color='#1A1A1A', command=get_license, border_color="#192E45")
+        license_button = customtkinter.CTkButton(app, text="License", width=140, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=get_license, border_color="#1F6AA5")
         license_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
         license_button.place(x=30, y=485)
 
-        other_license_button = customtkinter.CTkButton(app, text="Other", width=142, font=("Arial", 20, "bold"), bg_color="#1A1A1A", command=get_other_license, border_color="#192E45")
+        other_license_button = customtkinter.CTkButton(app, text="Other", width=140, font=("Arial", 20, "bold"), fg_color="#1F6AA5", bg_color="#192E45", command=get_other_license, border_color="#1F6AA5")
         other_license_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
-        other_license_button.place(x=178, y=485)
+        other_license_button.place(x=180, y=485)
 
         settings_all_idk_bothering_coming_up_with_variable_names_any_more.append(about_button)
         settings_all_idk_bothering_coming_up_with_variable_names_any_more.append(github)
@@ -732,7 +758,7 @@ def selectmodecmd(value = None): ## Select what screen your on encrypt / decrypt
         topframe = customtkinter.CTkFrame(app, width=400, height=74, fg_color="#44AE4E", corner_radius=0)
         topframe.place(x=0, y=0)
 
-        options_button = customtkinter.CTkButton(app, text="⚙️", font=("Arial", 30), hover_color="#44AE4E", bg_color="#44AE4E", fg_color="#44AE4E", command=settingscmd, height=30, width=30)
+        options_button = customtkinter.CTkButton(app, text="⚙️", font=("Arial", 30), hover_color="#28482b", bg_color="#44AE4E", fg_color="#44AE4E", command=settingscmd, height=30, width=30)
         options_button.pack(side=tk.TOP, anchor=tk.NE) 
         options_button.place(x = 290, y = 17)
 
@@ -763,7 +789,7 @@ def selectmodecmd(value = None): ## Select what screen your on encrypt / decrypt
     elif value == " 🔒 Encrypt File ": # encrypt screen
         topframe = customtkinter.CTkFrame(app, width=400, height=74, fg_color="#E34039", corner_radius=0)
         topframe.place(x=0, y=0)
-        options_button = customtkinter.CTkButton(app, text="⚙️", font=("Arial", 30), hover_color="#E34039", bg_color="#E34039", fg_color="#E34039", command=settingscmd, height=30, width=30)
+        options_button = customtkinter.CTkButton(app, text="⚙️", font=("Arial", 30), hover_color="#75322f", bg_color="#E34039", fg_color="#E34039", command=settingscmd, height=30, width=30)
         options_button.pack(side=tk.TOP, anchor=tk.NE) 
         options_button.place(x = 290, y = 17)
 
@@ -826,6 +852,6 @@ if user_config_allow_web_connection :
 
 app.mainloop()
 
-## On exit we write the user config back to the config file
+## On exit we write the user config back to the config file so that we save the user's settings
 with open(user_config_file_path, 'w') as config_file :
     json.dump(user_config_file, config_file)
