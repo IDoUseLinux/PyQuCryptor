@@ -8,16 +8,16 @@ from Crypto.Cipher import AES ## More Crypto stuff
 from Crypto.Random import get_random_bytes
 
 ## Since I have no idea how to do version control
-build_string = "Build 2023-11-04.gpc_main.rc4.v400"
-is_dev_version = True
-version = "V1.4.0"
+version = "V1.4.0" ## The actual version of the program. 
+build_string = "Build 2023-11-05.gpc_main.rc4.v420" ## Hehehe ## Build string is just for tracking 
+is_dev_version = False ## Change this to False in order for check for updates
 
 about_txt = f"""\
 PyQuCryptor {version}
 PyQuCryptor {build_string}
 Made by: Jinghao Li (Backend, frontend, head-developer), Kekoa Dang (Frontend), Zoe Murata (Logo designer)
 License: BSD 3-Clause No Nuclear License 2014 
-Date of programming: 2023-11-04
+Date of programming: 2023-11-05
 Programming language: Python 3.12
 Why did we do this: No idea
 Is Dev version: {is_dev_version}"""
@@ -66,14 +66,13 @@ customtkinter.deactivate_automatic_dpi_awareness()
 ## User settings storage section
 user_config_default = {
     "Delete_og_file_when_encrypting" : False,
-    "Delete_og_file_when_decrypting" : False,
+    "Delete_og_file_when_decrypting" : True,
     "Scramble_filename" : False,
-    "Allow_web_connections" : False, ## We set this to true when in production b/c we still haven't configed the website for it just yet
+    "Allow_web_connections" : True,
     "End_of_life_status" : False
 }
 
-## Gets the current script location so we can read/write the config file
-## We store it in the user's home folder
+## Get's user's home dir so we can store configs in the user's home folder
 user_config_file_path = "C:/Users/" + os.getlogin() + "/pyqucryptor.json"
 
 logo_path = resource_path('resources/PyQuCryptorv4.png')
@@ -95,7 +94,7 @@ try :
     user_config_allow_web_connection = user_config_file['Allow_web_connections']
     program_current_end_of_life_status = user_config_file['End_of_life_status']
 
-## If something goes wrong, it resets the config file
+## If something goes wrong, it resets the config file with the default copy
 except :
     with open(user_config_file_path, 'w') as config_file :
         json.dump(user_config_default, config_file)
@@ -139,9 +138,9 @@ def request_uac_elevation() :
     else: return True
 
 class enc_dec_obj() :
-    cryptographic_library_version = "Version 2023-11-04.gpc_main.rc4.v400"
+    cryptographic_library_version = "Version 2023-11-04.gpc_main.rc4.v400" ## This is the version of the crypto stuff it doesn't have to match the build string
     
-    def __init__(self) -> None:
+    def __init__(self) -> None : ## IDK what this is for lmao I used the auto-generated thiny
         pass
 
     ## AES-256-CTR is used for encryption
@@ -159,7 +158,7 @@ class enc_dec_obj() :
         except FileNotFoundError :
             raise FileNotFoundError("The requested file for encryption does not exist.")
         try :
-            if os.stat(path_to_file) > 17179869184 :
+            if os.stat(path_to_file) > 17179869184 : ## Checks the file to see if its over 16 GiBs b/c weird stuff happens with big files
                 messagebox.showwarning(title="PyQuCryptor: Large File size", message="PyQuCryptor can become unstable when dealing with large file sizes.")
         except : pass
         basename = os.path.basename(path_to_file)
@@ -443,9 +442,9 @@ def generate_rng_filename(file_name_length = 12) :
 
 ## Web stuff
 def check_for_updates(tell=True) :
-    global program_current_end_of_life_status
+    global program_current_end_of_life_status ## We kinda just forgot to use this variable
     ___ = True ## I just need a variable...
-    ## If this returns 404, then its not eol, but if it doesn't it is in eol
+    ## If this returns 404, then its not eol, but if it doesn't it is in eol but this can be changed if we revert that decision
     if not is_dev_version :
         try : 
             if str(requests.get("https://randomperson.net/pyqucryptor/eol.txt")) != "<Response [404]>" :
@@ -453,23 +452,32 @@ def check_for_updates(tell=True) :
                 user_config_file['End_of_life_status'] = True
                 messagebox.showwarning(title="PyQuCryptor: Status Warning", message='PyQyCryptor has reached End-of-Life. It is no longer maintained! Thanks for using the software though!') 
                 ___ = False
-            else : pass
+            else : user_config_file['End_of_life_status'] = False
             
             if str(requests.get("https://randomperson.net/pyqucryptor/" + build_string)) == '<Response [404]>' :
                 if messagebox.askyesno("PyQuCryptor: Updates", 'An update is available, would you like to visit the github page?') :
                     webbrowser.open("https://github.com/IDoUseLinux/PyQuCryptor/")
                 ___ = False
             else : pass
+        
+        ## This catches the issue where it would raise an error
+        ## If the website is down, or if the user is disconnected from the internet
         except : 
             ___ = False
             messagebox.showwarning(title="PyQuCryptor: Updates", message="Unable to check for updates, please check your internet connection and try again.")
+            
+            ## Reads the last know status of the program from the config file
+            if program_current_end_of_life_status == True :
+                messagebox.showwarning(title="PyQuCryptor: Status Warning", message="PyQyCryptor has reached End-of-Life. It is no longer maintained! And it's use is no longer recommended Thanks for using the software though!") 
+                ___ = False
 
-        if ___ == True and tell == True: 
+        if ___ == True and tell == True :
             messagebox.showinfo(title="PyQuCryptor: Updates", message="PyQuCryptor is up-to-date!")
-    else : 
-        messagebox.showinfo(title="PyQuCryptor: Updates", message="This is a developer version. This program is up-to-date!")
 
-## LMAO Kekoa, you thought u were smart for using lists, we still gotta define these function names
+    else : 
+        if tell == True : messagebox.showinfo(title="PyQuCryptor: Updates", message="This is a developer version. This program is up-to-date!")
+
+## LMAO Kekoa, you thought you were smart for using lists, we still gotta define these function names
 def update_scramble_filename() :
     global user_config_scramble_filename, user_config_file
     if user_config_scramble_filename :
@@ -527,7 +535,7 @@ def encryptupload():
     file_path_label.insert(0,file_path)
 
 def decryptfileupload() :
-    file_path = filedialog.askopenfilename(title="Please Select the encrypted file", filetypes=[("ENCR files", "*.encr"), ("All files", "*.*")]) ## Default file extension is .encr
+    file_path = filedialog.askopenfilename(title="Please Select the encrypted file", filetypes=[("ENCR file", "*.encr"), ("All files", "*.*")]) ## Default file extension is .encr
     file_path_label.delete(0, tk.END)
     file_path_label.insert(0,file_path)
 
