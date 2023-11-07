@@ -11,29 +11,27 @@ I chose CTR because I don't have to worry about padding, plus it has authenticat
 
   AES :
   
-    XTS - PyCryptoDome doesn't support it
-    
-    CBC - Padding is painful
-    
-    CFB - Too lazy (Most valid reason **ever**)
-    
-    GCM - Can only encrypt about 64 GiBs worth of files (We wanted a higher limit)
-    
-    CCM - No idea how it works
-    
-    EAX - No idea how it works
-    
-    ECB - Bruh its not secure
+  - XTS - PyCryptoDome doesn't support it
+  - CBC - Padding is painful
+  - CFB - Too lazy (Most valid reason **ever**)
+  - GCM - Can only encrypt about 64 GiBs worth of files (We wanted a higher limit)
+  - CCM - No idea how it works
+  - EAX - No idea how it works
+  - ECB - Bruh its not secure
     
   Other ciphers :
   
-    CHACHA20 - AES is faster with acceleration (AES-NI) plus most CPUs support them
+  - CHACHA20 - AES is faster with acceleration (AES-NI) plus most CPUs support them
+  - 3DES/TDES - This is barely secure for today, let alone 20+ years into the future
+  - All public-private key systems - None of them are secure against quantum attacks
+  - Actual post-quantum algos - This is Python, implememnting them would be painful, plus I have zero idea how most of them even work ¯\_(ツ)_/¯
     
-    3DES/TDES - This is barely secure for today, let alone 20+ years into the future
-    
-    All public-private key systems - None of them are secure against quantum attacks
-    
-    Actual post-quantum algos - This is Python, implememnting them would be painful, plus I have zero idea how most of them even work ¯\_(ツ)_/¯
-    
+# Plausible deniability
+The data inside of the encrypted file is indistinguishable from random, thus providing plausible deniability that the data is infact just random noise. However there are a few caveats to be aware of; 
 
-    
+  - The size of the original file should not be known by the advisory.
+  - The file name should be scrambled with the randomize filename option.
+  - The password of the file should not be known by the advisory (Obviously).
+
+PyQuCryptor provides plausible deniability by having "random" data in the entirety of the file. The first 12 bytes is a random salt for the password. Then a 64-byte SHA3-512 hash is encoded in bytes, which makes it also random, and then everything else in the file has been encrypted using AES-256-CTR, which as of currently, cannot be distinguished from randomness. And thus the user can claim that the file is a collection of random bytes, with no actual data inside of it. 
+
