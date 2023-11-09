@@ -1,5 +1,5 @@
 ## PyQuCryptor for Windows 10/11
-import customtkinter, secrets, string, json, webbrowser, requests ## Random stuff for GUI and backend
+import customtkinter, secrets, string, json, webbrowser, requests, multiprocessing ## Random stuff for GUI and backend
 import os, threading, ctypes, hashlib, sys ## Crypto stuff 
 import tkinter as tk ## More GUI Stuff
 from PIL import Image
@@ -10,7 +10,8 @@ from Crypto.Random import get_random_bytes
 ## Since I have no idea how to do version control
 version = "V1.4.0" ## The actual version of the program. 
 build_string = "Build 2023-11-05.gpc_main.rc4.v420" ## Hehehe ## Build string is just for tracking 
-is_dev_version = False ## Change this to False in order for check for updates
+is_dev_version = True ## Change this to False in order for check for updates
+has_auto_checked = True
 
 about_txt = f"""\
 PyQuCryptor {version}
@@ -59,7 +60,7 @@ with open(resource_path("resources/other_licenses.txt"), 'r') as license_file:
 ## Frontend stuff
 app = customtkinter.CTk()
 app.iconbitmap(resource_path("resources/PyQuCryptorv4.ico"))
-customtkinter.deactivate_automatic_dpi_awareness()
+#customtkinter.deactivate_automatic_dpi_awareness()
 
 ## Jesus these variable names are stupid but you understand them... right?
 ## but these are the default settings for the app
@@ -76,26 +77,18 @@ user_config_default = {
 user_config_file_path = "C:/Users/" + os.getlogin() + "/pyqucryptor.json"
 
 logo_path = resource_path('resources/PyQuCryptorv4.png')
+
 ## Try statement to see if the file exists or nah
 try :
     with open(user_config_file_path, 'r') as config_file :
         user_config_file = json.load(config_file)
-except :
-    with open(user_config_file_path, 'w') as config_file :
-        json.dump(user_config_default, config_file)
-    with open(user_config_file_path, 'r') as config_file :
-        user_config_file = json.load(config_file)
-
-## Tries to get the variable values
-try :
     user_config_delete_og_file_when_encrypting = user_config_file['Delete_og_file_when_encrypting']
     user_config_delete_og_file_when_decrypting = user_config_file['Delete_og_file_when_decrypting']
     user_config_scramble_filename = user_config_file['Scramble_filename']
     user_config_allow_web_connection = user_config_file['Allow_web_connections']
     program_current_end_of_life_status = user_config_file['End_of_life_status']
-
-## If something goes wrong, it resets the config file with the default copy
 except :
+    ## If something goes wrong we re-create the file using the saved copy
     with open(user_config_file_path, 'w') as config_file :
         json.dump(user_config_default, config_file)
     with open(user_config_file_path, 'r') as config_file :
@@ -179,7 +172,7 @@ class enc_dec_obj() :
         ## Generating the encryption key
         encryption_key = get_random_bytes(32)
 
-        cipher = AES.new(encryption_key, AES.MODE_CTR, nonce=get_random_bytes(11))
+        cipher = AES.new(encryption_key, AES.MODE_CTR, nonce=get_random_bytes(11), use_aesni=True)
 
         ## Passwod salt
         datalist.append(get_random_bytes(24))
@@ -210,7 +203,7 @@ class enc_dec_obj() :
 
         datalist[2] = bytes.fromhex(datalist[2])
         
-        cipher = AES.new(encr_encr_key, AES.MODE_CTR, nonce=datalist[1])
+        cipher = AES.new(encr_encr_key, AES.MODE_CTR, nonce=datalist[1], use_aesni=True)
 
         datalist2[0] = cipher.encrypt(datalist2[0])
 
@@ -219,7 +212,7 @@ class enc_dec_obj() :
         ## We have to encode this in bytes because of AES encryption.
         datalist2[2] = cipher.encrypt(bytes.fromhex(datalist2[2]))
 
-        cipher = AES.new(datalist3[0], AES.MODE_CTR, nonce=datalist3[1])
+        cipher = AES.new(datalist3[0], AES.MODE_CTR, nonce=datalist3[1], use_aesni=True)
         with open(path_to_file, 'rb') as plain_file :
             ## Does basically the same thing as when delete_og_file == True
             if scramble_filename and delete_og_file == False :
@@ -309,7 +302,7 @@ class enc_dec_obj() :
         ## But basically it takes in a password, combines it with 
         ## a salt and turns it into an encryption key that is used
         ## to decrypt the file header.
-        cipher = AES.new(hashlib.pbkdf2_hmac("sha3_256", bytes(password, 'utf-8'), datalist[0], 1048576, 32), AES.MODE_CTR, nonce=datalist[1])
+        cipher = AES.new(hashlib.pbkdf2_hmac("sha3_256", bytes(password, 'utf-8'), datalist[0], 1048576, 32), AES.MODE_CTR, nonce=datalist[1], use_aesni=True)
         
         ## Decrypts the encrypted metadata
         datalist2[0] = cipher.decrypt(datalist2[0])
@@ -323,7 +316,7 @@ class enc_dec_obj() :
             raise ValueError("Password is incorrect.")
 
         ## Overwrites the original cipher object with the one to decrypt files with. 
-        cipher = AES.new(datalist2[0], AES.MODE_CTR, nonce=datalist2[1])
+        cipher = AES.new(datalist2[0], AES.MODE_CTR, nonce=datalist2[1], use_aesni=True)
 
         with open(path_to_file, 'rb') as encrypted_file :
             encrypted_file.read(207) ## We read the file header first but we dont need this bc we already have it
@@ -476,6 +469,14 @@ def check_for_updates(tell=True) :
 
     else : 
         if tell == True : messagebox.showinfo(title="PyQuCryptor: Updates", message="This is a developer version. This program is up-to-date!")
+
+def run_check_for_updates(tell=True) :
+    update_process = multiprocessing.Process(target=check_for_updates, args=(tell,))
+    update_process.start()
+    update_process.join(timeout=3)
+    if update_process.is_alive() :
+        update_process.kill()
+    update_process.join()
 
 ## LMAO Kekoa, you thought you were smart for using lists, we still gotta define these function names
 def update_scramble_filename() :
@@ -708,7 +709,7 @@ def settingscmd():
         github.pack(side=tk.BOTTOM, anchor=tk.CENTER)
         github.place(x=130, y=445)
 
-        update = customtkinter.CTkButton(app, text="Update", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=check_for_updates, border_color="#1F6AA5")
+        update = customtkinter.CTkButton(app, text="Update", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=run_check_for_updates, border_color="#1F6AA5")
         update.pack(side=tk.BOTTOM, anchor=tk.CENTER)
         update.place(x=230, y=445)
 
@@ -737,6 +738,12 @@ def selectmodecmd(value = None): ## Select what screen your on encrypt / decrypt
     global password_prompt, set_password, generate_password_button, applabelname
     global screen_state, selectmode, is_on_settings_menu, file_path_label_label
     global settings_all_idk_bothering_coming_up_with_variable_names_any_more
+
+    global has_auto_checked
+
+    if not has_auto_checked and user_config_allow_web_connection :
+        run_check_for_updates(tell=False)
+        has_auto_checked = True
     
     if value == None : value = screen_state
     try: # Tries to remove everything
@@ -837,6 +844,7 @@ autoselectmode = customtkinter.StringVar(value=" 🔒 Encrypt File ")
 def center_window(root, width, height): # centers the app to your pc res
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
+
     # Calculate the X and Y coordinates for the window to be centered
     x = (screen_width - width) // 4
     y = (screen_height - height) // 4
@@ -855,10 +863,9 @@ customtkinter.set_appearance_mode("dark")
 ## We check for updates before starting the app
 ## if the user allows for it.
 
-if user_config_allow_web_connection :
-    check_for_updates(tell=False)
-
-app.mainloop()
+## This snippet is for multi-threading so that the app dupe itself
+if __name__ == "__main__" :
+    app.mainloop()
 
 ## On exit we write the user config back to the config file so that we save the user's settings
 with open(user_config_file_path, 'w') as config_file :
