@@ -133,7 +133,7 @@ def request_uac_elevation() :
 class enc_dec_obj() :
     cryptographic_library_version = "Version 2023-11-04.gpc_main.rc4.v400" ## This is the version of the crypto stuff it doesn't have to match the build string
     
-    def __init__(self) -> None : ## IDK what this is for lmao I used the auto-generated thiny
+    def __init__(self) -> None : ## IDK what this is for lmao I used the auto-generated thingy
         pass
 
     ## AES-256-CTR is used for encryption
