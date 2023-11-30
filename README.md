@@ -24,7 +24,7 @@ I chose CTR because I don't have to worry about padding, plus it has authenticat
   - CHACHA20 - AES is faster with acceleration (AES-NI) plus most CPUs support them
   - 3DES/TDES - This is barely secure for today, let alone 20+ years into the future
   - All public-private key systems - None of them are secure against quantum attacks
-  - Actual post-quantum algos - This is Python, implememnting them would be painful, plus I have zero idea how most of them even work ¯\_(ツ)_/¯
+  - Actual post-quantum algos - This is Python, implememnting them would be painful, plus I have zero idea how most of them even work ¯\\_(ツ)_/¯
     
 # Plausible deniability
 The data inside of the encrypted file is indistinguishable from random, thus providing plausible deniability that the data is infact just random noise. However there are a few caveats to be aware of; 
