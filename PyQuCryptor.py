@@ -388,7 +388,7 @@ def secure_erase(file_path) :
         except :
             messagebox.showerror(title = "PyQuCryptor: File Deletion Error", message="Error while deleing file.")
 
-def check_for_updates() :
+def check_for_updates(auto=False) :
     if not is_dev_version :
         try :
             if str(requests.get("https://randomperson.net/pyqucryptor/eol.txt")) != "<Response [404]>" :
@@ -396,10 +396,13 @@ def check_for_updates() :
             if str(requests.get(f"https://randomperson.net/pyqucryptor/{version}")) == "<Response [404]>" : ## We now ping using version to simplify the web request 
                 messagebox.showinfo("PyQuCryptor: Updates", "An update for PyQuCryptor is avalible, would you like to go to the GitHub page?")
             else : 
-                messagebox.showinfo("PyQuCryptor: Updates", "PyQuCryptor is Up-To-Date")
+                if not auto : 
+                    messagebox.showinfo("PyQuCryptor: Updates", "PyQuCryptor is Up-To-Date")
         except Exception as error:
             messagebox.showerror("PyQuCryptor: Updates", f"Error whilst trying to fetch updates! Error code: {error}")
-    else : messagebox.showinfo("PyQuCryptor: Updates", "This is a development build. It does not check for updates for the sakes of my personal website not being DoSed by myself.")
+    else : 
+        if not auto :
+            messagebox.showinfo("PyQuCryptor: Updates", "This is a development build. It does not check for updates for the sakes of my personal website not being DoSed by myself.")
 
 def update_setting(key, value) :
     user_config[key] = value
@@ -426,6 +429,8 @@ class GUI_Controller :
         self.app.config(background="#192e45")
         self.has_selector = False
         self.selector_var = customtkinter.StringVar(value=start_screen)
+        ## We set the current screen to the start screen so that prev_screen is not blank b/c if it is it will cause the GUI to not load properly
+        self.current_screen = start_screen
         self.set_screen(value=start_screen)
 
     def set_screen(self, value) :
@@ -452,10 +457,8 @@ class GUI_Controller :
     
     def spawn_selector(self) :
         if not self.has_selector :
-            self.selector_var = customtkinter.StringVar(value=self.current_screen)
             self.selectmode = customtkinter.CTkSegmentedButton(self.app, values=[" 🔒 Encrypt File ", " 🔓 Decrypt File "], font=("Arial", 20, "bold"), selected_color="#393939", fg_color="#1A1A1A", unselected_color="#141414", unselected_hover_color="#2E2E2E", selected_hover_color="#393939",border_width=8, corner_radius=10, height=50, bg_color="#192E45", variable=self.selector_var, width=325, command=self.set_screen)
             self.selectmode.pack(side=customtkinter.TOP, padx=10, pady=(100,0)) 
-            self.selectmode.set(self.current_screen)
             self.has_selector = True
 
     def encrypt_screen(self) :
@@ -706,11 +709,21 @@ class GUI_Controller :
 ## This snippet is for multi-threading so that the app dupe itself
 if __name__ == "__main__" :
     app = customtkinter.CTk()
-    ## Sets the app controller to be the app.
-    app_controller = GUI_Controller(app=app, start_screen=" 🔒 Encrypt File ")
-    ## We check for updates before starting the app
-    ## if the user allows for it.
-    app.mainloop()
+    try :
+        if user_config["Auto Update"] : 
+            check_for_updates(True)
+        ## Sets the app controller to be the app.
+        app_controller = GUI_Controller(app=app, start_screen=" 🔒 Encrypt File ")
+        ## We check for updates before starting the app
+        ## if the user allows for it.
+        app.mainloop()
+    ## Try statement to catch the errors related to corrupted config file
+    except KeyError :
+        if user_config["Auto Update"] : 
+            check_for_updates(True)
+        user_config = config_default
+        app_controller = GUI_Controller(app=app, start_screen=" 🔒 Encrypt File ")
+        app.mainloop
     ## On exit we write the user config back to the config file so that we save the user's settings
     with open(user_config_file_path, 'w') as config_file :
         json.dump(user_config, config_file)
