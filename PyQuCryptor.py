@@ -1,4 +1,5 @@
 ## PyQuCryptor for Windows 10/11
+## Writing crappy code is my passion
 import customtkinter, secrets, string, json, webbrowser, requests, multiprocessing ## Random stuff for GUI and backend
 import os, threading, ctypes, hashlib, sys ## Crypto stuff 
 import tkinter as tk ## More GUI Stuff
@@ -8,11 +9,12 @@ from Crypto.Cipher import AES ## More Crypto stuff
 from Crypto.Random import get_random_bytes
 
 ## Since I have no idea how to do version control
-version = "V1.4.0" ## The actual version of the program. 
-build_string = "Build 2023-11-05.gpc_main.rc4.v420" ## Hehehe ## Build string is just for tracking 
-is_dev_version = True ## Change this to False in order for check for updates
+version = "V2.0" ## The actual version of the program. 
+build_string = "Build 2023-12-01.v2-0.main.r007" ## Build string is just for personal tracking 
+is_dev_version = True ## Change this to False in order for check for updates as this prevents my site from getting DoSed by myself from debugging the amazon rainforest worth of bugs
 has_auto_checked = True
 
+## About dialog text
 about_txt = f"""\
 PyQuCryptor {version}
 PyQuCryptor {build_string}
@@ -46,58 +48,34 @@ You acknowledge that this software is not designed, licensed or intended for use
 
 ## We need this snippet for our program to work. Yes this was stack overflow
 def resource_path(relative_path):
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
+    try :
         base_path = sys._MEIPASS
-    except Exception:
+    except Exception :
         base_path = os.path.abspath(".")
-
     return os.path.join(base_path, relative_path)
 
 with open(resource_path("resources/other_licenses.txt"), 'r') as license_file:
     other_licenses = license_file.read()
-
-## Frontend stuff
-app = customtkinter.CTk()
-app.iconbitmap(resource_path("resources/PyQuCryptorv4.ico"))
-#customtkinter.deactivate_automatic_dpi_awareness()
-
-## Jesus these variable names are stupid but you understand them... right?
-## but these are the default settings for the app
-## User settings storage section
-user_config_default = {
-    "Delete_og_file_when_encrypting" : False,
-    "Delete_og_file_when_decrypting" : True,
-    "Scramble_filename" : False,
-    "Allow_web_connections" : True,
-    "End_of_life_status" : False
-}
 
 ## Get's user's home dir so we can store configs in the user's home folder
 user_config_file_path = "C:/Users/" + os.getlogin() + "/pyqucryptor.json"
 
 logo_path = resource_path('resources/PyQuCryptorv4.png')
 
-## Try statement to see if the file exists or nah
+config_default = {
+    "Delete Original (ENC)" : False,
+    "Delete Original (DEC)" : True,
+    "Scramble Filename" : False,
+    "Auto Update" : False,
+    "End of life" : False, 
+    "First use" : True,
+    "Gen password length" : 16,}
+
 try :
     with open(user_config_file_path, 'r') as config_file :
-        user_config_file = json.load(config_file)
-    user_config_delete_og_file_when_encrypting = user_config_file['Delete_og_file_when_encrypting']
-    user_config_delete_og_file_when_decrypting = user_config_file['Delete_og_file_when_decrypting']
-    user_config_scramble_filename = user_config_file['Scramble_filename']
-    user_config_allow_web_connection = user_config_file['Allow_web_connections']
-    program_current_end_of_life_status = user_config_file['End_of_life_status']
+        user_config = json.load(config_file)
 except :
-    ## If something goes wrong we re-create the file using the saved copy
-    with open(user_config_file_path, 'w') as config_file :
-        json.dump(user_config_default, config_file)
-    with open(user_config_file_path, 'r') as config_file :
-        user_config_file = json.load(config_file)
-    user_config_delete_og_file_when_encrypting = user_config_file['Delete_og_file_when_encrypting']
-    user_config_delete_og_file_when_decrypting = user_config_file['Delete_og_file_when_decrypting']
-    user_config_scramble_filename = user_config_file['Scramble_filename']
-    user_config_allow_web_connection = user_config_file['Allow_web_connections']
-    program_current_end_of_life_status = user_config_file['End_of_life_status']
+    user_config = config_default
 
 ## Admin Checker
 def is_admin() :
@@ -112,7 +90,6 @@ def is_admin() :
     except:
         is_user_admin = False
         return False
-
 ## For the like 1 other person that will ever see this program
 ## This segment of code requests for admin privilidges.
 def request_uac_elevation() :
@@ -130,18 +107,17 @@ def request_uac_elevation() :
             return False
     else: return True
 
-class enc_dec_obj() :
-    cryptographic_library_version = "Version 2023-11-04.gpc_main.rc4.v400" ## This is the version of the crypto stuff it doesn't have to match the build string
+class cryptor() :
+    cryptographic_library_version = "Version 1.0" ## This is the version of the crypto stuff it doesn't have to match the build string
     
     def __init__(self) -> None : ## IDK what this is for lmao I used the auto-generated thingy
         pass
 
     ## AES-256-CTR is used for encryption
     def encrypt_file(self, password, path_to_file, delete_og_file=False, scramble_filename = False) :
-        ## datalist is for unencrypted metadata of the file. datalist2 is for the encrypted metadata.
-        datalist = [] ## Non-encrypted file header
-        datalist2 = [] ## Encrypted file header
-        datalist3 = [] ## Temporary copy of non-encrypted version of encrypted file header
+        ## nonEncList is for unencrypted metadata of the file. encryptedList is for the encrypted metadata.
+        nonEncList = [] ## Non-encrypted file header
+        encryptedList = [] ## Encrypted file header
         try :
             with open(path_to_file, 'rb') :
                 pass
@@ -159,11 +135,11 @@ class enc_dec_obj() :
         ## Its just easier to scramble the file name first and then encrypt it
         ## because the file is getting deleted anyways
         if scramble_filename and delete_og_file :
-            path_to_file_temp = str(path_to_file).replace(basename, '') + generate_rng_filename() ## This works LOL
+            path_to_file_temp = str(path_to_file).replace(basename, '') + ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(16)) ## This works LOL
             try : 
                 while True :
                     open(path_to_file_temp, 'rb')
-                    path_to_file_temp = str(path_to_file).replace(basename, '') + generate_rng_filename()
+                    path_to_file_temp = str(path_to_file).replace(basename, '') + ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(16))
             except : pass
             os.rename(path_to_file, path_to_file_temp)
             path_to_file = path_to_file_temp ## Updates the new path to the file 
@@ -175,68 +151,68 @@ class enc_dec_obj() :
         cipher = AES.new(encryption_key, AES.MODE_CTR, nonce=get_random_bytes(11), use_aesni=True)
 
         ## Passwod salt
-        datalist.append(get_random_bytes(24))
+        nonEncList.append(get_random_bytes(24))
 
         ## Encryption Nonce
-        datalist.append(get_random_bytes(12))
+        nonEncList.append(get_random_bytes(12))
 
         ## The encryption key used to encrypt files
-        datalist2.append(encryption_key)
+        encryptedList.append(encryption_key)
         ## The nonce used to encrypt files
-        datalist2.append(cipher.nonce)
+        encryptedList.append(cipher.nonce)
 
         ## IDK how threading works
-        hash_thread = threading.Thread(target=hash_object, args=(None, path_to_file, 'a')) ## a mode auto-assigns the variable to the datalist
+        hash_thread = threading.Thread(target=self.hash_object, args=(None, path_to_file, 'a')) ## a mode auto-assigns the variable to the nonEncList
         hash_thread.start()
         hash_thread.join()
 
-        datalist2.append(hashtemp)
+        encryptedList.append(self.hashtemp)
 
-        datalist3 = datalist2.copy()
-        ## This stupid line of code somehow **works first try**
+        encryptedList_copy = encryptedList.copy() ## Temporary copy of non-encrypted version of encrypted file header
+        ## This stupid line of code somehow **worked first try**
         ## But basically it takes in a password, combines it with 
         ## a salt and turns it into an encryption key that is used
         ## to encrypt the file header.
-        encr_encr_key = hashlib.pbkdf2_hmac("sha3_256", bytes(password, 'utf-8'), datalist[0], 1048576, 32)
+        encr_encr_key = hashlib.pbkdf2_hmac("sha3_256", bytes(password, 'utf-8'), nonEncList[0], 1048576, 32)
 
-        datalist.append(hash_object(object_to_hash=datalist2[0] + datalist2[1] + bytes.fromhex(datalist2[2]), mode="r"))
+        nonEncList.append(self.hash_object(object_to_hash=encryptedList[0] + encryptedList[1] + bytes.fromhex(encryptedList[2]), mode="r"))
 
-        datalist[2] = bytes.fromhex(datalist[2])
+        nonEncList[2] = bytes.fromhex(nonEncList[2])
         
-        cipher = AES.new(encr_encr_key, AES.MODE_CTR, nonce=datalist[1], use_aesni=True)
+        cipher = AES.new(encr_encr_key, AES.MODE_CTR, nonce=nonEncList[1], use_aesni=True)
 
-        datalist2[0] = cipher.encrypt(datalist2[0])
+        encryptedList[0] = cipher.encrypt(encryptedList[0])
 
-        datalist2[1] = cipher.encrypt(datalist2[1])
+        encryptedList[1] = cipher.encrypt(encryptedList[1])
 
         ## We have to encode this in bytes because of AES encryption.
-        datalist2[2] = cipher.encrypt(bytes.fromhex(datalist2[2]))
+        encryptedList[2] = cipher.encrypt(bytes.fromhex(encryptedList[2]))
 
-        cipher = AES.new(datalist3[0], AES.MODE_CTR, nonce=datalist3[1], use_aesni=True)
+        cipher = AES.new(encryptedList_copy[0], AES.MODE_CTR, nonce=encryptedList_copy[1], use_aesni=True)
         with open(path_to_file, 'rb') as plain_file :
             ## Does basically the same thing as when delete_og_file == True
             if scramble_filename and delete_og_file == False :
-                path_to_file = str(path_to_file).replace(basename, '') + generate_rng_filename() 
+                path_to_file = str(path_to_file).replace(basename, '') + ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(16)) ## What the hell is this line of code
                 try : 
                     while True :
                         open(path_to_file, 'r')
-                        path_to_file = str(path_to_file).replace(basename, '') + generate_rng_filename() 
+                        path_to_file = str(path_to_file).replace(basename, '') + ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(16)) ## What the hell is this line of code
                 except : pass
 
             with open(path_to_file + '.encr', 'wb') as encrypted_file :
                 ## Password salt
-                encrypted_file.write(datalist[0])
+                encrypted_file.write(nonEncList[0])
                 ## Non-encrypted cipher nonce
-                encrypted_file.write(datalist[1])
+                encrypted_file.write(nonEncList[1])
                 ## Hash of encrypted file header
-                encrypted_file.write(datalist[2])
+                encrypted_file.write(nonEncList[2])
 
                 ## Encrypted 32-byte Encryption key
-                encrypted_file.write(datalist2[0])
+                encrypted_file.write(encryptedList[0])
                 ## Encrypted 11-byte Nonce
-                encrypted_file.write(datalist2[1])
+                encrypted_file.write(encryptedList[1])
                 ## Encrypted SHA3-512 Hash/Checksum
-                encrypted_file.write(datalist2[2])
+                encrypted_file.write(encryptedList[2])
 
                 buffer = plain_file.read(65536)
                 while len(buffer) > 0 :
@@ -245,78 +221,78 @@ class enc_dec_obj() :
                     buffer = plain_file.read(65536)
                 
         if delete_og_file == True :
-            secure_erase(path_to_file, False)
+            secure_erase(path_to_file)
         messagebox.showinfo(title="PyQuCryptor: Encryption Complete", message="Finished Encryption of file(s).") 
 
-    def decrypt_file(self, password, path_to_file, delete_og_file = False ) :
+    def decrypt_file(self, password, path_to_file, delete_og_file = False) :
         ## Basically we are doing the excapt same thing as the
         ## encrypt_file() function except its backwards and it
         ## requires way less inputs inorder to get an output
-        datalist = []
-        datalist2 = []
+        nonEncList = []
+        encryptedList = []
         try :
-            if os.stat(path_to_file) > 17179869184 :
+            if os.stat(path_to_file) > 17179869184 : ## Warns the user about large file sizes
                 messagebox.showwarning(title="PyQuCryptor: Large File size", message="PyQuCryptor can become unstable when dealing with large file sizes.")
         except : pass
 
         try : 
             with open(path_to_file, 'rb') as encr_key_loc :
                 ## Password Salt
-                datalist.append(encr_key_loc.read(24))
+                nonEncList.append(encr_key_loc.read(24))
                 ## Encryptor's Nonce
-                datalist.append(encr_key_loc.read(12))
+                nonEncList.append(encr_key_loc.read(12))
                 ## Encrypted file header hash
-                datalist.append(bytes.hex(encr_key_loc.read(64))) 
+                nonEncList.append(bytes.hex(encr_key_loc.read(64))) 
                 
                 ## Encrypted Encryption Key 32 bytes
-                datalist2.append(encr_key_loc.read(32))
+                encryptedList.append(encr_key_loc.read(32))
                 ## Encrypted Nonce 11 bytes
-                datalist2.append(encr_key_loc.read(11))
+                encryptedList.append(encr_key_loc.read(11))
                 ## Encrypted non-encrypted file checksum/hash 64 bytes
-                datalist2.append(encr_key_loc.read(64))
+                encryptedList.append(encr_key_loc.read(64))
                 ## We don't read the rest of the file because we only need the header
                 ## Plus it would nuke the system's memory if we were to do so
                 
         except PermissionError :
             request_uac_elevation()
             ## Password Salt
-            datalist.append(encr_key_loc.read(24))
+            nonEncList.append(encr_key_loc.read(24))
             ## Encryptor's Nonce
-            datalist.append(encr_key_loc.read(12))
+            nonEncList.append(encr_key_loc.read(12))
             ## Encrypted file header hash
-            datalist.append(bytes.hex(encr_key_loc.read(64))) 
+            nonEncList.append(bytes.hex(encr_key_loc.read(64))) 
             
             ## Encrypted Encryption Key 32 bytes
-            datalist2.append(encr_key_loc.read(32))
+            encryptedList.append(encr_key_loc.read(32))
             ## Encrypted Nonce 11 bytes
-            datalist2.append(encr_key_loc.read(11))
+            encryptedList.append(encr_key_loc.read(11))
             ## Encrypted non-encrypted file checksum/hash 64 bytes
-            datalist2.append(encr_key_loc.read(64))
+            encryptedList.append(encr_key_loc.read(64))
             ## We don't read the rest of the file because we only need the header
             ## Plus it would nuke the system's memory if we were to do so
             
         except FileNotFoundError :
             raise FileNotFoundError("The requested file for decryption does not exist.")
 
-        ## This stupid line of code somehow **works first try**
+        ## This stupid line of code somehow **worked first try**
         ## But basically it takes in a password, combines it with 
         ## a salt and turns it into an encryption key that is used
         ## to decrypt the file header.
-        cipher = AES.new(hashlib.pbkdf2_hmac("sha3_256", bytes(password, 'utf-8'), datalist[0], 1048576, 32), AES.MODE_CTR, nonce=datalist[1], use_aesni=True)
+        cipher = AES.new(hashlib.pbkdf2_hmac("sha3_256", bytes(password, 'utf-8'), nonEncList[0], 1048576, 32), AES.MODE_CTR, nonce=nonEncList[1], use_aesni=True)
         
         ## Decrypts the encrypted metadata
-        datalist2[0] = cipher.decrypt(datalist2[0])
+        encryptedList[0] = cipher.decrypt(encryptedList[0])
 
-        datalist2[1] = cipher.decrypt(datalist2[1])
+        encryptedList[1] = cipher.decrypt(encryptedList[1])
 
-        datalist2[2] = bytes.hex(cipher.decrypt(datalist2[2]))
+        encryptedList[2] = bytes.hex(cipher.decrypt(encryptedList[2]))
 
-        if datalist[2] != hash_object(object_to_hash=datalist2[0] + datalist2[1] + bytes.fromhex(datalist2[2]), mode="r") :
+        if nonEncList[2] != self.hash_object(object_to_hash=encryptedList[0] + encryptedList[1] + bytes.fromhex(encryptedList[2]), mode="r") :
             messagebox.showerror(title="PyQuCryptor: Decrypt Error", message="Incorrect password and/or corrupted file header.")
             raise ValueError("Password is incorrect.")
 
         ## Overwrites the original cipher object with the one to decrypt files with. 
-        cipher = AES.new(datalist2[0], AES.MODE_CTR, nonce=datalist2[1], use_aesni=True)
+        cipher = AES.new(encryptedList[0], AES.MODE_CTR, nonce=encryptedList[1], use_aesni=True)
 
         with open(path_to_file, 'rb') as encrypted_file :
             encrypted_file.read(207) ## We read the file header first but we dont need this bc we already have it
@@ -328,12 +304,12 @@ class enc_dec_obj() :
                     buffer = encrypted_file.read(65536)
 
         ## Still have no idea how this stuff works
-        hash_thread = threading.Thread(target=hash_object, args=(None, path_to_file + ".temp", 'a')) ## a mode auto-assigns the variable to hash_temp
+        hash_thread = threading.Thread(target=self.hash_object, args=(None, path_to_file + ".temp", 'a')) ## a mode auto-assigns the variable to hash_temp
         hash_thread.start()
         hash_thread.join()
         ## We check if the file that has been decrypted is
         ## the same as the file that was originally encrypted
-        if datalist2[2] != hashtemp :
+        if encryptedList[2] != self.hashtemp :
             messagebox.showerror(title="PyQuCryptor: Decrypt Error", message="File hashes does not match, This file has been tampered with.")
             os.remove(path_to_file + ".temp") ## We don't have to securely delete this as it is probably just gibberish
             raise Exception("File encrypted file hashes does not match.")
@@ -368,7 +344,7 @@ class enc_dec_obj() :
                     secure_erase(path_to_file + '.temp', False)
                     
                 else : 
-                    secure_erase(path_to_file, False)
+                    secure_erase(path_to_file)
                     ## .encr delete 
                     os.rename(path_to_file + ".temp", path_to_file)
                     ## .temp -> .encr
@@ -376,42 +352,33 @@ class enc_dec_obj() :
                     ## .encr -> og_file extension
         messagebox.showinfo(title="PyQucryptor: Decryption Complete", message= "Finished Decryption of file.")
 
-def hash_object(object_to_hash=None, file_path=None, mode="r") :
-    global hashtemp
-    ## But heres the API doc anyways, if you specify the object_to_hash, then its going to be using the older hash algo
-    ## but if you specify file_path you will get the new algo which will read the file by chunck to increase perf 
-    ## If the mode is 'r' it will return, if it is a it will assign, but any other character also works for this
-    hasher = hashlib.sha3_512()
-    if file_path != None :
-        with open(file_path, 'rb') as hash_file :
-            buffer = hash_file.read(65536)
-            while len(buffer) > 0:
-                hasher.update(buffer)
+    def hash_object(self, object_to_hash=None, file_path=None, mode="r") :
+        ## But heres the API doc anyways, if you specify the object_to_hash, then its going to be using the older hash algo
+        ## but if you specify file_path you will get the new algo which will read the file by chunck to increase perf 
+        ## If the mode is 'r' it will return, if it is a it will assign, but any other character also works for this
+        self.hasher = hashlib.sha3_512()
+        if file_path != None :
+            with open(file_path, 'rb') as hash_file :
                 buffer = hash_file.read(65536)
-    else :
-        hasher.update(object_to_hash)
-    hashed_object = hasher.hexdigest()
-    del hasher
-    del file_path
-    if mode == 'r' :
-        return hashed_object
-    else : hashtemp = hashed_object
+                while len(buffer) > 0:
+                    self.hasher.update(buffer)
+                    buffer = hash_file.read(65536)
+        else :
+            self.hasher.update(object_to_hash)
+        hashed_object = self.hasher.hexdigest()
+        del self.hasher
+        del file_path
+        if mode == 'r' :
+            return hashed_object
+        else : self.hashtemp = hashed_object
 
-def secure_erase(file_path, replace_with_zero = False) :
+def secure_erase(file_path) :
     file_size = os.path.getsize(file_path)
-    if replace_with_zero == False :
-        with open(file_path, 'wb') as deleting_file :
-            while file_size > 65536 :
-                deleting_file.write(get_random_bytes(65536))
-                file_size -= 65536
-            deleting_file.write(get_random_bytes(file_size))
-    else : 
-        with open(file_path, 'wb') as deleting_file :
-            while file_size > 65536 :
-                deleting_file.write(b"\x00"*65536) ## We are going to change this later because this is probably not zero in binary
-                file_size -= 65536
-            else : 
-                deleting_file.write(b"\x00"*file_size)
+    with open(file_path, 'wb') as deleting_file :
+        while file_size > 65536 :
+            deleting_file.write(get_random_bytes(65536))
+            file_size -= 65536
+        deleting_file.write(get_random_bytes(file_size))
     try :
         os.remove(file_path)
     except :
@@ -420,453 +387,330 @@ def secure_erase(file_path, replace_with_zero = False) :
             os.remove(file_path)
         except :
             messagebox.showerror(title = "PyQuCryptor: File Deletion Error", message="Error while deleing file.")
-     
-def generate_password(pwd_length = 16, options = None):
-    characters = string.ascii_letters + string.digits + string.punctuation
-    password = ''.join(secrets.choice(characters) for _ in range(pwd_length)) ## What the hell is that variable name UNDERSCORE??????????
-    if options == 'return' : 
-        return password
-    else :
-        password_prompt.delete(0, tk.END)
-        password_prompt.insert(0, password)
 
-def generate_rng_filename(file_name_length = 12) :
-    return ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(file_name_length)) ## What the hell is this line of code
-
-## Web stuff
-def check_for_updates(tell=True) :
-    global program_current_end_of_life_status ## We kinda just forgot to use this variable
-    ___ = True ## I just need a variable...
-    ## If this returns 404, then its not eol, but if it doesn't it is in eol but this can be changed if we revert that decision
+def check_for_updates() :
     if not is_dev_version :
-        try : 
+        try :
             if str(requests.get("https://randomperson.net/pyqucryptor/eol.txt")) != "<Response [404]>" :
-                program_current_end_of_life_status = True
-                user_config_file['End_of_life_status'] = True
-                messagebox.showwarning(title="PyQuCryptor: Status Warning", message='PyQyCryptor has reached End-of-Life. It is no longer maintained! Thanks for using the software though!') 
-                ___ = False
-            else : user_config_file['End_of_life_status'] = False
-            
-            if str(requests.get("https://randomperson.net/pyqucryptor/" + build_string)) == '<Response [404]>' :
-                if messagebox.askyesno("PyQuCryptor: Updates", 'An update is available, would you like to visit the github page?') :
-                    webbrowser.open("https://github.com/IDoUseLinux/PyQuCryptor/")
-                ___ = False
-            else : pass
-        
-        ## This catches the issue where it would raise an error
-        ## If the website is down, or if the user is disconnected from the internet
-        except : 
-            ___ = False
-            messagebox.showwarning(title="PyQuCryptor: Updates", message="Unable to check for updates, please check your internet connection and try again.")
-            
-            ## Reads the last know status of the program from the config file
-            if program_current_end_of_life_status == True :
-                messagebox.showwarning(title="PyQuCryptor: Status Warning", message="PyQyCryptor has reached End-of-Life. It is no longer maintained! And it's use is no longer recommended Thanks for using the software though!") 
-                ___ = False
+                messagebox.showwarning("PyQuCryptor: End of Life", "PyQuCryptor is no longer supported! Thanks for using the software though!")
+            if str(requests.get(f"https://randomperson.net/pyqucryptor/{version}")) == "<Response [404]>" : ## We now ping using version to simplify the web request 
+                messagebox.showinfo("PyQuCryptor: Updates", "An update for PyQuCryptor is avalible, would you like to go to the GitHub page?")
+            else : 
+                messagebox.showinfo("PyQuCryptor: Updates", "PyQuCryptor is Up-To-Date")
+        except Exception as error:
+            messagebox.showerror("PyQuCryptor: Updates", f"Error whilst trying to fetch updates! Error code: {error}")
+    else : messagebox.showinfo("PyQuCryptor: Updates", "This is a development build. It does not check for updates for the sakes of my personal website not being DoSed by myself.")
 
-        if ___ == True and tell == True :
-            messagebox.showinfo(title="PyQuCryptor: Updates", message="PyQuCryptor is up-to-date!")
+def update_setting(key, value) :
+    user_config[key] = value
 
-    else : 
-        if tell == True : messagebox.showinfo(title="PyQuCryptor: Updates", message="This is a developer version. This program is up-to-date!")
+## This is GUI stuff now
+class GUI_Controller :
+    all_screen_obj = []
+    current_screen = ""
+    prev_screen = ""
+    GITHUB_URL = "https://github.com/IDoUseLinux/PyQuCryptor/"
+    WEBSITE_URL = "https://randomperson.net/PyQuCryptor/"
+    RICKROLL_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    has_selector = False
+    selectmode = None
 
-def run_check_for_updates(tell=True) :
-    update_process = multiprocessing.Process(target=check_for_updates, args=(tell,))
-    update_process.start()
-    update_process.join(timeout=3)
-    if update_process.is_alive() :
-        update_process.kill()
-    update_process.join()
+    def __init__(self, app, start_screen) :        
+        self.app = app
+        self.app.iconbitmap(resource_path("resources/PyQuCryptorv4.ico"))
 
-## LMAO Kekoa, you thought you were smart for using lists, we still gotta define these function names
-def update_scramble_filename() :
-    global user_config_scramble_filename, user_config_file
-    if user_config_scramble_filename :
-        user_config_scramble_filename = False
-        user_config_file['Scramble_filename'] = False
-    elif  user_config_scramble_filename == False :
-        user_config_scramble_filename = True
-        user_config_file['Scramble_filename'] = True
+        self.app.resizable(False, False) ## makes it unable to resize the app
+        self.app.title("PyQuCryptor") 
+        self.app.geometry("350x600")
+        customtkinter.set_appearance_mode("dark")
+        self.app.config(background="#192e45")
+        self.has_selector = False
+        self.selector_var = customtkinter.StringVar(value=start_screen)
+        self.set_screen(value=start_screen)
 
-def update_delete_og_enc() :
-    global user_config_delete_og_file_when_encrypting, user_config_file
-    if user_config_delete_og_file_when_encrypting :
-        user_config_delete_og_file_when_encrypting = False
-        user_config_file['Delete_og_file_when_encrypting'] = False
-    elif user_config_delete_og_file_when_encrypting == False :
-        user_config_delete_og_file_when_encrypting = True
-        user_config_file['Delete_og_file_when_encrypting'] = True
+    def set_screen(self, value) :
+        ## Tries to clear the screen first
+        try :
+            while self.all_screen_obj :
+                self.all_screen_obj[0].destroy()
+                del self.all_screen_obj[0]
+        except : pass
 
-def update_delete_og_dec() :
-    global user_config_delete_og_file_when_decrypting, user_config_file
-    if user_config_delete_og_file_when_decrypting :
-        user_config_delete_og_file_when_decrypting = False
-        user_config_file['Delete_og_file_when_decrypting'] = False
-    elif user_config_delete_og_file_when_decrypting == False :
-        user_config_delete_og_file_when_decrypting = True
-        user_config_file['Delete_og_file_when_decrypting'] = True
+        ## The actual set screen part
+        if value == " 🔒 Encrypt File " :
+            self.spawn_selector()
+            self.encrypt_screen()
+        elif value == " 🔓 Decrypt File " :
+            self.spawn_selector()
+            self.decrypt_screen()
 
-def update_auto_update() :
-    global user_config_allow_web_connection, user_config_file
-    if user_config_allow_web_connection :
-        user_config_allow_web_connection = False
-        user_config_file['Allow_web_connections'] = False
-    elif user_config_allow_web_connection == False :
-        user_config_allow_web_connection = True
-        user_config_file['Allow_web_connections'] = True
-
-## Above this is backend
-## This is frontend now
-## GUI logic stuff
-def print_ver():
-    messagebox.showinfo(title="PyQuCryptor: About", message=about_txt)
-
-def redir_to_github() :
-    webbrowser.open("https://github.com/IDoUseLinux/PyQuCryptor")
-
-def get_license() :
-    messagebox.showinfo(title="PyQuCryptor: License", message=license_txt)
-
-def get_other_license() :
-    messagebox.showinfo("PyQuCryptor: License", message=other_licenses)
-
-def encryptupload(): 
-    file_path = filedialog.askopenfilename(title="Select a file for encryption") 
-    file_path_label.delete(0, tk.END)
-    file_path_label.insert(0,file_path)
-
-def decryptfileupload() :
-    file_path = filedialog.askopenfilename(title="Please Select the encrypted file", filetypes=[("ENCR file", "*.encr"), ("All files", "*.*")]) ## Default file extension is .encr
-    file_path_label.delete(0, tk.END)
-    file_path_label.insert(0,file_path)
-
-def encryptcmd(): #encrypt button command + 3 checks to make sure everything is there
-    password = password_prompt.get()
-    file_path = file_path_label.get()
-    password_prompt.delete(0, tk.END)
-    password_prompt.insert(0, password)
+        elif value == "Settings" :
+            self.selectmode.destroy()
+            self.has_selector = False
+            self.settings_menu()
+        self.prev_screen, self.current_screen = self.current_screen, value
     
-    if file_path[len(file_path)-3:] == ".hc" :
-        if messagebox.askyesno(title="PyQuCryptor: Encrypt", message="Are you sure you want to encrypt a VeraCrypt container? VeraCrypt containers that expands can cause errors with PyQuCryptor.") :
-            pass
-        else : raise TypeError("User does not want to encrypt VeraCrypt container.")
+    def spawn_selector(self) :
+        if not self.has_selector :
+            self.selector_var = customtkinter.StringVar(value=self.current_screen)
+            self.selectmode = customtkinter.CTkSegmentedButton(self.app, values=[" 🔒 Encrypt File ", " 🔓 Decrypt File "], font=("Arial", 20, "bold"), selected_color="#393939", fg_color="#1A1A1A", unselected_color="#141414", unselected_hover_color="#2E2E2E", selected_hover_color="#393939",border_width=8, corner_radius=10, height=50, bg_color="#192E45", variable=self.selector_var, width=325, command=self.set_screen)
+            self.selectmode.pack(side=customtkinter.TOP, padx=10, pady=(100,0)) 
+            self.selectmode.set(self.current_screen)
+            self.has_selector = True
 
-    if file_path == "" :
-        error_message = "Please select the file you want to encrypt."
-
-    elif not os.path.isfile(file_path) : # check 1 to see if the file exsisted 
-        error_message = "Unknown file."
-
-    elif password == "" : # Check to see if you got a password
-        error_message = "Please enter a password."
-
-    elif password.startswith(password[:1]*3) : ## Checks if the first 3 letters are the same b/c strong passwords
-        error_message = "Please enter a stronger password."
-    
-    elif len(password) < 12 or len(password) > 50: # checks if password length is the right amount if characters
-        error_message = "Password must be between 12 and 50 characters."
-
-    else:
-        error_message = None 
-
-    if error_message: # gives the error message if any
-        messagebox.showerror(title="PyQuCryptor: Encrypt Error", message=error_message)
-
-    else: # File path + password
-        file_path_label.delete(0, tk.END)
-        password_prompt.delete(0, tk.END)
-        encryptor = enc_dec_obj()
-        encryptor.encrypt_file(password, file_path, user_config_delete_og_file_when_encrypting, user_config_scramble_filename)
-        del encryptor
-
-def decryptcmd():
-    password = password_prompt.get()
-    file_path = file_path_label.get()
-
-    if file_path == "" :
-        error_message = "Please select the file you want to decrypt."
-
-    elif file_path[len(file_path)-5:] != ".encr" : ## This checks for whether or not the file ends in .encr and if it does not end in .encr it will rename it
-        try : 
-            open(file_path + '.encr', 'rb')
-            if messagebox.askyesno(title= "PyQuCryptor: File Already Exists Error", message=f"File {os.path.basename(file_path) + '.encr'} already exists. Do you want to overwrite?") : ## I know this code is ugly
-                os.replace(file_path, file_path + '.encr')
-            else : error_message = "Error when renaming non .encr file to .encr file."
-        except FileNotFoundError :
-            os.rename(file_path, file_path + ".encr")
-        file_path += '.encr'
-
-    elif not os.path.isfile(file_path): # Check 1: to see if the file exsists
-        error_message = "Error: Unknown file."
-
-    elif password == "": # Check 2: to see if you got a password
-        error_message = "Please enter your password."
-    elif len(password) < 12 or len(password) > 50: # checks if password length is the right amount if characters
-        error_message = "Password must be between \n12 and 50 characters."
-    
-    else:
-        error_message = None
-
-    if error_message: # gives the error message if any
-        messagebox.showerror(title="PyQuCryptor: Decrypt Error", message=error_message)
-    else: ## File + password is ready to be used
-        password_prompt.delete(0, tk.END)
-        decryptor = enc_dec_obj()
-        decryptor.decrypt_file(password, file_path, user_config_delete_og_file_when_decrypting) ## Last variable is for deleting original file. If True, it delete, if False, it does not delete
-
-## This is more GUI stuff but we need these variables to be defined first
-is_on_settings_menu = True ## Sets it to true so we can generate the switcher in the first place
-screen_state = None
-
-def settingscmd():
-    global encrypt_button, encryptupload_button, file_path_label, options_button
-    global password_prompt, set_password, generate_password_button, applabelname
-    global is_on_settings_menu, user_config_file, options_button
-    global settings_all_idk_bothering_coming_up_with_variable_names_any_more
-    is_on_settings_menu = True
-
-    try: ## Removes encrypt screen
-        selectmode.destroy()
-        encrypt_button.destroy()
-        password_prompt.destroy()
-        set_password.destroy()
-        encryptupload_button.destroy()
-        file_path_label.destroy()
-        generate_password_button.destroy()
-        applabelname.destroy()
-        file_path_label_label.destroy()
-
-        topframe = customtkinter.CTkFrame(master=app, width=400, height=74, fg_color="#2A4D73", corner_radius=0)
+    def encrypt_screen(self) :
+        topframe = customtkinter.CTkFrame(app, width=400, height=74, fg_color="#E34039", corner_radius=0)
         topframe.place(x=0, y=0)
+        self.all_screen_obj.append(topframe)
+
+        options_button = customtkinter.CTkButton(app, text="⚙️", font=("Arial", 30), hover_color="#75322f", bg_color="#E34039", fg_color="#E34039", command=lambda : self.set_screen("Settings"), height=30, width=30)
+        options_button.pack(side=tk.TOP, anchor=tk.NE) 
+        options_button.place(x = 290, y = 17)
+        self.all_screen_obj.append(options_button)
+
+        applabelname = customtkinter.CTkLabel(app, text="PyQuCryptor", bg_color="#E34039", text_color="white", font=("Arial",30, "bold"))
+        applabelname.pack(side=tk.TOP, pady=(10,0), padx=(20,0), anchor=tk.NW)
+        applabelname.place(x = 20, y = 20)
+        self.all_screen_obj.append(applabelname)
+
+        encrypt_button = customtkinter.CTkButton(app, text="🔒 Encrypt File", font=("Arial", 25, "bold") ,fg_color="#44AD4D", bg_color="#192E45", hover_color="#28482B", command=self.encrypt_file, height=50, width=325)
+        encrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)    
+        self.all_screen_obj.append(encrypt_button)
+
+        generate_password_button = customtkinter.CTkButton(app, text="Generate Password", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=self.generate_pwd, height=25, width=325)
+        generate_password_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
+        self.all_screen_obj.append(generate_password_button)
+
+        self.password_prompt = customtkinter.CTkEntry(app, placeholder_text="12 - 50 characters", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
+        self.password_prompt.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER)
+        self.all_screen_obj.append(self.password_prompt)
+        
+        set_password = customtkinter.CTkLabel(app, text="Set a Password", bg_color="#192E45", font=("Arial", 18, "bold"))
+        set_password.pack(side=tk.BOTTOM, padx=(30), pady=(0,2), anchor=tk.W)   
+        self.all_screen_obj.append(set_password)
+            
+        encrypt_fd_button = customtkinter.CTkButton(app, text="Select File", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=lambda : self.select_file("Select file for Encryption", [("All files", "*.*"), ]), height=25, width=325)
+        encrypt_fd_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
+        self.all_screen_obj.append(encrypt_fd_button)
+
+        self.file_path_label = customtkinter.CTkEntry(app, placeholder_text="File Path", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
+        self.file_path_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER)
+        self.all_screen_obj.append(self.file_path_label)
+
+        ## Lmao I still suck with names
+        file_path_label_label = customtkinter.CTkLabel(app, text="Select Your File", font=('Arial', 18, 'bold'), text_color='white', bg_color="#192E45")
+        file_path_label_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.W)
+        self.all_screen_obj.append(file_path_label_label)
+
+    def decrypt_screen(self) :
+        topframe = customtkinter.CTkFrame(app, width=400, height=74, fg_color="#44AE4E", corner_radius=0)
+        topframe.place(x=0, y=0)
+        self.all_screen_obj.append(topframe)
+
+        options_button = customtkinter.CTkButton(app, text="⚙️", font=("Arial", 30), hover_color="#28482b", bg_color="#44AE4E", fg_color="#44AE4E", command=lambda : self.set_screen("Settings"), height=30, width=30)
+        options_button.pack(side=tk.TOP, anchor=tk.NE) 
+        options_button.place(x = 290, y = 17)
+        self.all_screen_obj.append(options_button)
+
+        applabelname = customtkinter.CTkLabel(app, text="PyQuCryptor", bg_color="#44AE4E", text_color="white", font=("Arial",30, "bold"))
+        applabelname.pack(side=tk.TOP, pady=(10,0), padx=(20,0), anchor=tk.NW)
+        applabelname.place(x = 20, y = 20)
+        self.all_screen_obj.append(applabelname)
+
+        decrypt_button = customtkinter.CTkButton(app, text="🔓 Decrypt File", font=("Arial", 25, "bold"), fg_color="#E34039", hover_color="#75322f", command=self.decrypt_file, height=50, width=325)
+        decrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)    
+        self.all_screen_obj.append(decrypt_button)
+
+        self.password_prompt = customtkinter.CTkEntry(app, placeholder_text="E.g. 1234", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
+        self.password_prompt.pack(side=tk.BOTTOM, padx=(30), pady=(0, 67), anchor=tk.CENTER)                  
+        self.all_screen_obj.append(self.password_prompt)
+
+        set_password = customtkinter.CTkLabel(app, text="Enter Your Password", bg_color="#192E45", font=("Arial", 18, "bold"))
+        set_password.pack(side=tk.BOTTOM, padx=(30), pady=(0,2), anchor=tk.W)   
+        self.all_screen_obj.append(set_password)
+
+        encrypt_fd_button = customtkinter.CTkButton(app, text="Select Encrypted File", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=lambda : self.select_file("Select the encrypted file", filetypes=[("ENCR file", "*.encr"), ("All files", "*.*")]), height=25, width=325)
+        encrypt_fd_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
+        self.all_screen_obj.append(encrypt_fd_button)
+
+        self.file_path_label = customtkinter.CTkEntry(app, placeholder_text="Encrypted File Path", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
+        self.file_path_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER) 
+        self.all_screen_obj.append(self.file_path_label)
+
+        file_path_label_text = customtkinter.CTkLabel(app, text="Select Your File", font=('Arial', 18, 'bold'), text_color='white', bg_color="#192E45")
+        file_path_label_text.pack(side=tk.BOTTOM, padx=(30), anchor=tk.W)
+        self.all_screen_obj.append(file_path_label_text)
+
+    def settings_menu(self) :
+        ## This stuff is taken from the old GUI, nothing has really changed except for some optimizations
+        ## Top banner
+        banner = customtkinter.CTkFrame(master=app, width=400, height=74, fg_color="#2A4D73", corner_radius=0)
+        banner.place(x=0, y=0)
+        self.all_screen_obj.append(banner)
 
         applabelname = customtkinter.CTkLabel(app, text="Settings", bg_color="#2A4D73", text_color="white", font=("Arial",30, "bold"))
         applabelname.pack(side=tk.TOP, padx=(10,0), pady=(25,0), anchor=tk.W)
         applabelname.place(x = 20, y = 20)
+        self.all_screen_obj.append(applabelname)
 
-        options_button = customtkinter.CTkButton(app, text="⚙️", font=("Arial", 30), hover_color="#192E45", bg_color="#2A4D73", fg_color="#2A4D73", command=selectmodecmd, height=30, width=30)
-        options_button.pack(side=tk.TOP, anchor=tk.NE) 
-        options_button.place(x = 290, y = 17)
+        settings_button = customtkinter.CTkButton(app, text="⚙️", font=("Arial", 30), hover_color="#192E45", bg_color="#2A4D73", fg_color="#2A4D73", command=lambda : self.set_screen(self.prev_screen), height=30, width=30)
+        settings_button.pack(side=tk.TOP, anchor=tk.NE) 
+        settings_button.place(x = 290, y = 17)
+        self.all_screen_obj.append(settings_button)
 
-        settings_button_list = []
-        settings_band_list = []
-        settings_band_label = []
-        settings_all_idk_bothering_coming_up_with_variable_names_any_more = []
+        about_button = customtkinter.CTkButton(app, text="About", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : messagebox.showinfo("PyQuCryptor: About", about_txt), border_color="#1F6AA5")
+        about_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
+        about_button.place(x=30, y=445)
+        self.all_screen_obj.append(about_button)
 
+        ## About thingy
         ## Draws the app logo
-        image = Image.open(logo_path)
-        photo = customtkinter.CTkImage(image, size=(120, 120))
-        
-        photo_thingy = customtkinter.CTkLabel(app, image=photo, text='', bg_color='#192E45', fg_color="#192E45", text_color='white', font=("Arial", 25, 'bold'))
+        photo_thingy = customtkinter.CTkLabel(app, image=customtkinter.CTkImage(Image.open(logo_path), size=(120, 120)), text='', bg_color='#192E45', fg_color="#192E45", text_color='white', font=("Arial", 25, 'bold'))
         photo_thingy.pack(side=tk.TOP, padx=(0,0), pady=(0,0), anchor=tk.W)
-        photo_thingy.place(x=-7, y=75)
+        photo_thingy.place(x=0, y=75)
+        self.all_screen_obj.append(photo_thingy)
 
         ## Draws PyQuCryptor
         photo_thingy_label = customtkinter.CTkLabel(app, text="PyQuCryptor " + version, bg_color='#192E45', text_color='white', font=('Arial', 25, 'bold'))
         photo_thingy_label.pack(side=tk.TOP, padx=(0,0), pady=(0,0), anchor=tk.S)
         photo_thingy_label.place(x=95, y=125)
+        self.all_screen_obj.append(photo_thingy_label)
 
-        ## Version string
-        version_txt = customtkinter.CTkLabel(app, text="Version " + build_string, bg_color="#192E45", text_color='white', font=("Arial", 15, 'bold'))
-        version_txt.pack(side=tk.TOP,padx=(10,0), pady=(0,0), anchor=tk.CENTER)
-        version_txt.place(x = 20, y = 195)
+        ## build string
+        build_tag = customtkinter.CTkLabel(app, text=f"Version {build_string}", bg_color="#192E45", text_color='white', font=("Arial", 15, 'bold'))
+        build_tag.pack(side=tk.TOP,padx=(10,0), pady=(0,0), anchor=tk.CENTER)
+        build_tag.place(x = 45, y = 195)
+        self.all_screen_obj.append(build_tag)
 
-        settings_all_idk_bothering_coming_up_with_variable_names_any_more.append(version_txt)
-        settings_all_idk_bothering_coming_up_with_variable_names_any_more.append(photo_thingy)
-        settings_all_idk_bothering_coming_up_with_variable_names_any_more.append(photo_thingy_label)
+        ## Setting switches
+        config_list = ["Delete Original (ENC)", "Delete Original (DEC)", "Scramble Filename", "Auto Update", ]
+        config_list_status = []
+        for config in config_list :
+            if user_config[config] :
+                config_list_status.append(customtkinter.StringVar(value="on"))
+            else : 
+                config_list_status.append(customtkinter.StringVar(value="off"))
 
-        ## Draws the rest of the settings menu
-        settings_list = ["Delete Original (ENC)", "Delete Original (DEC)", "Randomize Filename", "Auto-Update"]
-        settings_function_list = [update_delete_og_enc, update_delete_og_dec, update_scramble_filename, update_auto_update]
-        settings_button_status = []
-        for idk in [user_config_file['Delete_og_file_when_encrypting'], user_config_file['Delete_og_file_when_decrypting'], user_config_file["Scramble_filename"], user_config_file["Allow_web_connections"]] : ## Please kill this program
-            if idk : settings_button_status.append(customtkinter.StringVar(value="on"))
-            if idk == False : settings_button_status.append(customtkinter.StringVar(value="off"))
-
-        ## Iterate through the settings list
-        for index, setting in enumerate(settings_list):
+        for index, config in enumerate(config_list) :
             frame = customtkinter.CTkFrame(master=app, width=350, height=50, corner_radius=0, fg_color="#2A4D73")
-            frame.place(x=0, y=220 + index * 55)  ## Adjust the y-coordinate based on the index
+            frame.place(x=0, y=220 + index * 55)
 
-            switch = customtkinter.CTkSwitch(master=frame, text="", command=settings_function_list[index], variable=settings_button_status[index], switch_height=35, switch_width=60, onvalue="on", offvalue="off", progress_color="#44AE4E")
+            switch = customtkinter.CTkSwitch(master=frame, text="", command= lambda: update_setting(config, not user_config[config]), variable=config_list_status[index], switch_height=35, switch_width=60, onvalue="on", offvalue="off", progress_color="#44AE4E")
             switch.place(relx=0.90, rely=0.5, anchor=tk.CENTER)
 
-            frame_label = customtkinter.CTkLabel(master=frame, text=setting, text_color="white", font=("Arial", 20, "bold"))
+            frame_label = customtkinter.CTkLabel(master=frame, text=config, text_color="white", font=("Arial", 20, "bold"))
             frame_label.place(relx=0.35, rely=0.75, anchor=tk.S)
+            ## We need to add them to backwards to delete them in the correct order 
+            self.all_screen_obj.append(frame_label)
+            self.all_screen_obj.append(switch)
+            self.all_screen_obj.append(frame)
 
-            settings_band_list.append(frame)
-            settings_button_list.append(switch)
-            settings_band_label.append(frame_label)
+        ## Bottom buttons
+        github_button = customtkinter.CTkButton(app, text="GitHub", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : self.redir_to_site(self.GITHUB_URL), border_color="#1F6AA5")
+        github_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
+        github_button.place(x=130, y=445)
+        self.all_screen_obj.append(github_button)
 
-        encrypt_button = customtkinter.CTkButton(app, text="Back", font=("Arial", 25, "bold"), fg_color="#E34039", bg_color="#192E45", hover_color="#75322f", command=selectmodecmd, height=50, width=325, border_color="#1F6AA5")
-        encrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)  
+        update_button = customtkinter.CTkButton(app, text="Update", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=check_for_updates, border_color="#1F6AA5")
+        update_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
+        update_button.place(x=230, y=445)
+        self.all_screen_obj.append(update_button)
 
-        about_button = customtkinter.CTkButton(app, text="About", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=print_ver, border_color="#1F6AA5")
-        about_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
-        about_button.place(x=30, y=445)
-
-        ## I know this one is not the same length, but I almost deleted the entire program whilst trying to make them the same size
-        github = customtkinter.CTkButton(app, text="GitHub", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=redir_to_github, border_color="#1F6AA5")
-        github.pack(side=tk.BOTTOM, anchor=tk.CENTER)
-        github.place(x=130, y=445)
-
-        update = customtkinter.CTkButton(app, text="Update", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=run_check_for_updates, border_color="#1F6AA5")
-        update.pack(side=tk.BOTTOM, anchor=tk.CENTER)
-        update.place(x=230, y=445)
-
-        license_button = customtkinter.CTkButton(app, text="License", width=140, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=get_license, border_color="#1F6AA5")
+        license_button = customtkinter.CTkButton(app, text="License", width=140, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : self.display_popup(messagebox.showinfo,"PyQuCryptor: License", license_txt), border_color="#1F6AA5")
         license_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
         license_button.place(x=30, y=485)
+        self.all_screen_obj.append(license_button)
 
-        other_license_button = customtkinter.CTkButton(app, text="Other", width=140, font=("Arial", 20, "bold"), fg_color="#1F6AA5", bg_color="#192E45", command=get_other_license, border_color="#1F6AA5")
+        other_license_button = customtkinter.CTkButton(app, text="Other", width=140, font=("Arial", 20, "bold"), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : self.display_popup(messagebox.showinfo, "PyQuCryptor: License", other_licenses), border_color="#1F6AA5")
         other_license_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
         other_license_button.place(x=180, y=485)
+        self.all_screen_obj.append(other_license_button)
 
-        settings_all_idk_bothering_coming_up_with_variable_names_any_more.append(about_button)
-        settings_all_idk_bothering_coming_up_with_variable_names_any_more.append(github)
-        settings_all_idk_bothering_coming_up_with_variable_names_any_more.append(update)
-        settings_all_idk_bothering_coming_up_with_variable_names_any_more.append(license_button)
-        settings_all_idk_bothering_coming_up_with_variable_names_any_more.append(other_license_button)
+        back_button = customtkinter.CTkButton(app, text="Back", font=("Arial", 25, "bold"), fg_color="#E34039", bg_color="#192E45", hover_color="#75322f", command=lambda : self.set_screen(self.prev_screen), height=50, width=325, border_color="#1F6AA5")
+        back_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)  
+        self.all_screen_obj.append(back_button)
 
-        ## Linus torvalds would jump off a cliff after seeing this, like actually what is this...
-        settings_all_idk_bothering_coming_up_with_variable_names_any_more = settings_all_idk_bothering_coming_up_with_variable_names_any_more + settings_band_label + settings_button_list + settings_band_list
-    
-    except Exception : pass
+    def select_file(self, title, file_etx): 
+        self.file_path_label.delete(0, tk.END)
+        self.file_path_label.insert(0, filedialog.askopenfilename(title=title, filetypes=file_etx))
 
-## We are too tired to fix any bloat just deal with it...
-def selectmodecmd(value = None): ## Select what screen your on encrypt / decrypt
-    global encrypt_button, encryptupload_button, file_path_label, options_button
-    global password_prompt, set_password, generate_password_button, applabelname
-    global screen_state, selectmode, is_on_settings_menu, file_path_label_label
-    global settings_all_idk_bothering_coming_up_with_variable_names_any_more
+    def redir_to_site(self, url) : 
+        webbrowser.open(url)
 
-    global has_auto_checked
+    def generate_pwd(self, pwd_length=user_config["Gen password length"]) : 
+        characters = string.ascii_letters + string.digits + string.punctuation
+        self.password_prompt.delete(0, tk.END)
+        self.password_prompt.insert(0, ''.join(secrets.choice(characters) for _ in range(pwd_length)))
 
-    if not has_auto_checked and user_config_allow_web_connection :
-        run_check_for_updates(tell=False)
-        has_auto_checked = True
-    
-    if value == None : value = screen_state
-    try: # Tries to remove everything
-        encrypt_button.destroy()
-        password_prompt.destroy()
-        set_password.destroy()
-        encryptupload_button.destroy()
-        file_path_label.destroy()
-        generate_password_button.destroy()
-        file_path_label_label.destroy()
-    except:
-        pass
+    def encrypt_file(self) : 
+        password = self.password_prompt.get()
+        file_path = self.file_path_label.get()
 
-    try: ## Look at how clean this code is... just ignore all the other stuff...
-        for idek in settings_all_idk_bothering_coming_up_with_variable_names_any_more :
-            idek.destroy()
-    except : pass
-
-    if is_on_settings_menu :
-        selectmode = customtkinter.CTkSegmentedButton(app, values=[" 🔒 Encrypt File ", " 🔓 Decrypt File "], font=("Arial", 20, "bold"),
-                                                selected_color="#393939", fg_color="#1A1A1A", unselected_color="#141414", unselected_hover_color="#2E2E2E", selected_hover_color="#393939",
-                                                    border_width=7, corner_radius=13, height=50, bg_color="#192E45", variable=autoselectmode, width=325, command=selectmodecmd)
-        selectmode.pack(side=customtkinter.TOP, padx=10, pady=(100,0)) 
-        is_on_settings_menu = False
-    
-    if value == " 🔓 Decrypt File ": # decrypt screen
-        topframe = customtkinter.CTkFrame(app, width=400, height=74, fg_color="#44AE4E", corner_radius=0)
-        topframe.place(x=0, y=0)
-
-        options_button = customtkinter.CTkButton(app, text="⚙️", font=("Arial", 30), hover_color="#28482b", bg_color="#44AE4E", fg_color="#44AE4E", command=settingscmd, height=30, width=30)
-        options_button.pack(side=tk.TOP, anchor=tk.NE) 
-        options_button.place(x = 290, y = 17)
-
-        applabelname = customtkinter.CTkLabel(app, text="PyQuCryptor", bg_color="#44AE4E", text_color="white", font=("Arial",30, "bold"))
-        applabelname.pack(side=tk.TOP, pady=(10,0), padx=(20,0), anchor=tk.NW)
-        applabelname.place(x = 20, y = 20)
-
-        encrypt_button = customtkinter.CTkButton(app, text="🔓 Decrypt File", font=("Arial", 25, "bold"), fg_color="#E34039", hover_color="#75322f", command=decryptcmd, height=50, width=325)
-        encrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)    
-
-        password_prompt = customtkinter.CTkEntry(app, placeholder_text="E.g. 1234", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
-        password_prompt.pack(side=tk.BOTTOM, padx=(30), pady=(0, 67), anchor=tk.CENTER)                  
+        ## Checks for VeraCrypt containers
+        if file_path[len(file_path)-3:] == ".hc" :
+            if  messagebox.askyesno(title="PyQuCryptor: Encrypt", message="Are you sure you want to encrypt a VeraCrypt container? VeraCrypt containers that expands can cause errors with PyQuCryptor.") : pass
+            else : raise TypeError("User does not want to encrypt VeraCrypt container.")
         
-        set_password = customtkinter.CTkLabel(app, text="Enter Your Password", bg_color="#192E45", font=("Arial", 18, "bold"))
-        set_password.pack(side=tk.BOTTOM, padx=(30), pady=(0,2), anchor=tk.W)   
-            
-        encryptupload_button = customtkinter.CTkButton(app, text="Select Encrypted File", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=decryptfileupload, height=25, width=325)
-        encryptupload_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
-
-        file_path_label = customtkinter.CTkEntry(app, placeholder_text="Encrypted File Path", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
-        file_path_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER) 
-
-        file_path_label_label = customtkinter.CTkLabel(app, text="Select Your File", font=('Arial', 18, 'bold'), text_color='white', bg_color="#192E45")
-        file_path_label_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.W)
-
-        screen_state = " 🔓 Decrypt File "
-
-    elif value == " 🔒 Encrypt File ": # encrypt screen
-        topframe = customtkinter.CTkFrame(app, width=400, height=74, fg_color="#E34039", corner_radius=0)
-        topframe.place(x=0, y=0)
-        options_button = customtkinter.CTkButton(app, text="⚙️", font=("Arial", 30), hover_color="#75322f", bg_color="#E34039", fg_color="#E34039", command=settingscmd, height=30, width=30)
-        options_button.pack(side=tk.TOP, anchor=tk.NE) 
-        options_button.place(x = 290, y = 17)
-
-        applabelname = customtkinter.CTkLabel(app, text="PyQuCryptor", bg_color="#E34039", text_color="white", font=("Arial",30, "bold"))
-        applabelname.pack(side=tk.TOP, pady=(10,0), padx=(20,0), anchor=tk.NW)
-        applabelname.place(x = 20, y = 20)
-
-        encrypt_button = customtkinter.CTkButton(app, text="🔒 Encrypt File", font=("Arial", 25, "bold") ,fg_color="#44AD4D", bg_color="#192E45", hover_color="#28482B", command=encryptcmd, height=50, width=325)
-        encrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)    
-
-        generate_password_button = customtkinter.CTkButton(app, text="Generate Password", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=generate_password, height=25, width=325)
-        generate_password_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
-
-        password_prompt = customtkinter.CTkEntry(app, placeholder_text="12 - 50 characters", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
-        password_prompt.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER)
+        if file_path == "" :
+            error_message = "Please select the file you want to encrypt."
+        elif not os.path.isfile(file_path) : # check 1 to see if the file exsisted 
+            error_message = "Unknown file."
+        elif password == "" : # Check to see if you got a password
+            error_message = "Please enter a password."
+        elif password.startswith(password[:1]*3) : ## Checks if the first 3 letters are the same b/c strong passwords
+            error_message = "Please enter a stronger password."
+        elif len(password) < 12 or len(password) > 50: # checks if password length is the right amount if characters
+            error_message = "Password must be between 12 and 50 characters."
+        else:
+            error_message = None 
         
-        set_password = customtkinter.CTkLabel(app, text="Set a Password", bg_color="#192E45", font=("Arial", 18, "bold"))
-        set_password.pack(side=tk.BOTTOM, padx=(30), pady=(0,2), anchor=tk.W)   
-            
-        encryptupload_button = customtkinter.CTkButton(app, text="Select File", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=encryptupload, height=25, width=325)
-        encryptupload_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
+        if error_message : # gives the error message if any
+            messagebox.showerror(title="PyQuCryptor: Encrypt Error", message=error_message)
 
-        file_path_label = customtkinter.CTkEntry(app, placeholder_text="File Path", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
-        file_path_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER)
+        else: # File path + password
+            self.file_path_label.delete(0, tk.END)
+            self.password_prompt.delete(0, tk.END)
+            cryptor().encrypt_file(password, file_path, user_config["Delete Original (ENC)"], user_config["Scramble Filename"])
 
-        file_path_label_label = customtkinter.CTkLabel(app, text="Select Your File", font=('Arial', 18, 'bold'), text_color='white', bg_color="#192E45")
-        file_path_label_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.W)
+    def decrypt_file(self) : 
+        password = self.password_prompt.get()
+        file_path = self.file_path_label.get()
 
-        screen_state = " 🔒 Encrypt File "
+        if file_path == "" :
+            error_message = "Please select the file you want to decrypt."
+        elif file_path[len(file_path)-5:] != ".encr" : ## This checks for whether or not the file ends in .encr and if it does not end in .encr it will rename it
+            try : 
+                open(file_path + '.encr', 'rb')
+                if messagebox.askyesno(title= "PyQuCryptor: File Already Exists Error", message=f"File {os.path.basename(file_path) + '.encr'} already exists. Do you want to overwrite?") : ## I know this code is ugly
+                    os.replace(file_path, file_path + '.encr')
+                else : error_message = "Error when renaming non .encr file to .encr file."
+            except FileNotFoundError :
+                os.rename(file_path, file_path + ".encr")
+            file_path += '.encr'
+        elif not os.path.isfile(file_path): # Check 1: to see if the file exsists
+            error_message = "Error: Unknown file."
+        elif password == "": # Check 2: to see if you got a password
+            error_message = "Please enter your password."
+        elif len(password) < 12 or len(password) > 50: # checks if password length is the right amount if characters
+            error_message = "Password must be between \n12 and 50 characters."
+        
+        else:
+            error_message = None
 
-## gUyS i Am iN tHe MaInFraMe
-mainframe = customtkinter.CTkFrame(app, width=400, height=600, fg_color="#192E45", corner_radius=0)
-mainframe.place(x=0, y=0)
-
-autoselectmode = customtkinter.StringVar(value=" 🔒 Encrypt File ")
-
-def center_window(root, width, height): # centers the app to your pc res
-    screen_width = root.winfo_screenwidth()
-    screen_height = root.winfo_screenheight()
-
-    # Calculate the X and Y coordinates for the window to be centered
-    x = (screen_width - width) // 4
-    y = (screen_height - height) // 4
-    # Set the window's position
-    root.geometry(f"{width}x{height}+{x}+{y}")
-
-center_window(app, 350, 600)
-app.resizable(False, False) ## makes it unable to resize the app
-app.title("PyQuCryptor") ## title 
-value=" 🔒 Encrypt File " ## sets value for line below
-selectmodecmd(value) ## selects encrypt screen first, if this is not here then it will be a blank screen then give a error
-
-width, height = 350, 600
-
-customtkinter.set_appearance_mode("dark")
-## We check for updates before starting the app
-## if the user allows for it.
+        if error_message: # gives the error message if any
+            messagebox.showerror(title="PyQuCryptor: Decrypt Error", message=error_message)
+        else: ## File + password is ready to be used
+            self.password_prompt.delete(0, tk.END)
+            cryptor().decrypt_file(password, file_path, user_config["Delete Original (DEC)"]) ## Last variable is for deleting original file. If True, it delete, if False, it does not delete
 
 ## This snippet is for multi-threading so that the app dupe itself
 if __name__ == "__main__" :
+    app = customtkinter.CTk()
+    ## Sets the app controller to be the app.
+    app_controller = GUI_Controller(app=app, start_screen=" 🔒 Encrypt File ")
+    ## We check for updates before starting the app
+    ## if the user allows for it.
     app.mainloop()
-
-## On exit we write the user config back to the config file so that we save the user's settings
-with open(user_config_file_path, 'w') as config_file :
-    json.dump(user_config_file, config_file)
+    ## On exit we write the user config back to the config file so that we save the user's settings
+    with open(user_config_file_path, 'w') as config_file :
+        json.dump(user_config, config_file)
