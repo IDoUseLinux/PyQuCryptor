@@ -10,18 +10,21 @@ from Crypto.Random import get_random_bytes
 
 ## Since I have no idea how to do version control
 version = "V2.0" ## The actual version of the program. 
-build_string = "Build 2023-12-03.v2-0.main.r008" ## Build string is just for personal tracking 
+build_string = "Build 2023-12-03.v2-0.main.r013" ## Build string is just for personal tracking 
 is_dev_version = True ## Change this to False in order for check for updates as this prevents my site from getting DoSed by myself from debugging the amazon rainforest worth of bugs
 has_auto_checked = True
+## Minor version such as 1.X maintain compatibility with 1.Y, major versions such as 2.X does not work with 1.X
+cryptographic_library_version = "Version 1.1" ## This is the version of the crypto stuff it doesn't have to match the version
 
 ## About dialog text
 about_txt = f"""\
 PyQuCryptor {version}
 PyQuCryptor {build_string}
+Cryptographic version: {cryptographic_library_version}
+Date of programming: {build_string[6:16]}
+Programming language: Python 3.12
 Made by: Jinghao Li (Backend, frontend, head-developer), Kekoa Dang (Frontend), Zoe Murata (Logo designer)
 License: BSD 3-Clause No Nuclear License 2014 
-Date of programming: 2023-11-05
-Programming language: Python 3.12
 Why did we do this: No idea
 Is Dev version: {is_dev_version}"""
 
@@ -67,7 +70,7 @@ config_default = {
     "Delete Original (DEC)" : True,
     "Scramble Filename" : False,
     "Auto Update" : False,
-    "End of life" : False, 
+    "End of life" : False,
     "First use" : True,
     "Gen password length" : 16,}
 
@@ -108,7 +111,7 @@ def request_uac_elevation() :
     else: return True
 
 class cryptor() :
-    cryptographic_library_version = "Version 1.0" ## This is the version of the crypto stuff it doesn't have to match the build string
+    cryptographic_library_version = cryptographic_library_version ## This is the version of the crypto stuff it doesn't have to match the build string
     
     def __init__(self) -> None : ## IDK what this is for lmao I used the auto-generated thingy
         pass
@@ -124,8 +127,6 @@ class cryptor() :
         except PermissionError :
             request_uac_elevation()
             with open(path_to_file, 'rb') : pass
-        except FileNotFoundError :
-            raise FileNotFoundError("The requested file for encryption does not exist.")
         try :
             if os.stat(path_to_file) > 17179869184 : ## Checks the file to see if its over 16 GiBs b/c weird stuff happens with big files
                 messagebox.showwarning(title="PyQuCryptor: Large File size", message="PyQuCryptor can become unstable when dealing with large file sizes.")
@@ -270,9 +271,6 @@ class cryptor() :
             encryptedList.append(encr_key_loc.read(64))
             ## We don't read the rest of the file because we only need the header
             ## Plus it would nuke the system's memory if we were to do so
-            
-        except FileNotFoundError :
-            raise FileNotFoundError("The requested file for decryption does not exist.")
 
         ## This stupid line of code somehow **worked first try**
         ## But basically it takes in a password, combines it with 
@@ -429,6 +427,7 @@ class GUI_Controller :
         self.app.config(background="#192e45")
         self.has_selector = False
         self.selector_var = customtkinter.StringVar(value=start_screen)
+        self.app.bind("<Enter>", lambda event : self.perform_crypto)
         ## We set the current screen to the start screen so that prev_screen is not blank b/c if it is it will cause the GUI to not load properly
         self.current_screen = start_screen
         self.set_screen(value=start_screen)
@@ -481,7 +480,7 @@ class GUI_Controller :
         applabelname.place(x = 20, y = 20)
         self.all_screen_obj.append(applabelname)
 
-        encrypt_button = customtkinter.CTkButton(app, text="🔒 Encrypt File", font=("Arial", 25, "bold") ,fg_color="#44AD4D", bg_color="#192E45", hover_color="#28482B", command=self.encrypt_file, height=50, width=325)
+        encrypt_button = customtkinter.CTkButton(app, text="🔒 Encrypt File", font=("Arial", 25, "bold") ,fg_color="#44AD4D", bg_color="#192E45", hover_color="#28482B", command=self.perform_crypto, height=50, width=325)
         encrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)    
         self.all_screen_obj.append(encrypt_button)
 
@@ -525,7 +524,7 @@ class GUI_Controller :
         applabelname.place(x = 20, y = 20)
         self.all_screen_obj.append(applabelname)
 
-        decrypt_button = customtkinter.CTkButton(app, text="🔓 Decrypt File", font=("Arial", 25, "bold"), fg_color="#E34039", hover_color="#75322f", command=self.decrypt_file, height=50, width=325)
+        decrypt_button = customtkinter.CTkButton(app, text="🔓 Decrypt File", font=("Arial", 25, "bold"), fg_color="#E34039", hover_color="#75322f", command=self.perform_crypto, height=50, width=325)
         decrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)    
         self.all_screen_obj.append(decrypt_button)
 
@@ -584,12 +583,10 @@ class GUI_Controller :
         photo_thingy_label.place(x=95, y=125)
         self.all_screen_obj.append(photo_thingy_label)
 
-        ## build string
-        build_tag = customtkinter.CTkLabel(app, text=f"Version {build_string}", bg_color="#192E45", text_color='white', font=("Arial", 15, 'bold'))
-        build_tag.pack(side=tk.TOP,padx=(10,0), pady=(0,0), anchor=tk.CENTER)
-        build_tag.place(x = 45, y = 195)
+        ## Build string
+        build_tag = customtkinter.CTkLabel(app, text=f"Version: {build_string}", bg_color="#192E45", text_color='white', font=("Arial", 15, 'bold'))
+        build_tag.pack(side=tk.TOP,padx=(0,0), pady=(195,0), anchor=tk.CENTER)
         self.all_screen_obj.append(build_tag)
-
         ## Setting switches
         config_list = ["Delete Original (ENC)", "Delete Original (DEC)", "Scramble Filename", "Auto Update", ]
         config_list_status = []
@@ -608,7 +605,7 @@ class GUI_Controller :
 
             frame_label = customtkinter.CTkLabel(master=frame, text=config, text_color="white", font=("Arial", 20, "bold"))
             frame_label.place(relx=0.35, rely=0.75, anchor=tk.S)
-            ## We need to add them to backwards to delete them in the correct order 
+            ## We need to add them to backwards to delete them in the correct order otherwise an error will happen
             self.all_screen_obj.append(frame_label)
             self.all_screen_obj.append(switch)
             self.all_screen_obj.append(frame)
@@ -624,12 +621,12 @@ class GUI_Controller :
         update_button.place(x=230, y=445)
         self.all_screen_obj.append(update_button)
 
-        license_button = customtkinter.CTkButton(app, text="License", width=140, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : self.display_popup(messagebox.showinfo,"PyQuCryptor: License", license_txt), border_color="#1F6AA5")
+        license_button = customtkinter.CTkButton(app, text="License", width=140, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : messagebox.showinfo("PyQuCryptor: License", license_txt), border_color="#1F6AA5")
         license_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
         license_button.place(x=30, y=485)
         self.all_screen_obj.append(license_button)
 
-        other_license_button = customtkinter.CTkButton(app, text="Other", width=140, font=("Arial", 20, "bold"), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : self.display_popup(messagebox.showinfo, "PyQuCryptor: License", other_licenses), border_color="#1F6AA5")
+        other_license_button = customtkinter.CTkButton(app, text="Other", width=140, font=("Arial", 20, "bold"), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : messagebox.showinfo("PyQuCryptor: License", other_licenses), border_color="#1F6AA5")
         other_license_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
         other_license_button.place(x=180, y=485)
         self.all_screen_obj.append(other_license_button)
@@ -650,66 +647,48 @@ class GUI_Controller :
         self.password_prompt.delete(0, tk.END)
         self.password_prompt.insert(0, ''.join(secrets.choice(characters) for _ in range(pwd_length)))
 
-    def encrypt_file(self) : 
+    def perform_crypto(self) : 
+        op_mode = self.current_screen
         password = self.password_prompt.get()
         file_path = self.file_path_label.get()
+        if op_mode == " 🔒 Encrypt File " :
+            Mode, mode = "Encrypt", "encrypt"
+            ## Checks for VeraCrypt containers
+            if file_path[len(file_path)-3:] == ".hc" :
+                if  messagebox.askyesno(title="PyQuCryptor: Encrypt", message="Are you sure you want to encrypt a VeraCrypt container? VeraCrypt containers that expands can cause errors with PyQuCryptor.") : pass
+                else : raise TypeError("User does not want to encrypt VeraCrypt container.")
 
-        ## Checks for VeraCrypt containers
-        if file_path[len(file_path)-3:] == ".hc" :
-            if  messagebox.askyesno(title="PyQuCryptor: Encrypt", message="Are you sure you want to encrypt a VeraCrypt container? VeraCrypt containers that expands can cause errors with PyQuCryptor.") : pass
-            else : raise TypeError("User does not want to encrypt VeraCrypt container.")
-        
+        elif op_mode == " 🔓 Decrypt File " :
+            Mode, mode = "Decrypt", "decrypt"
+            if file_path[len(file_path)-5:] != ".encr" : ## This checks for whether or not the file ends in .encr and if it does not end in .encr it will rename it
+                try : 
+                    open(file_path + '.encr', 'rb')
+                    if messagebox.askyesno(title= "PyQuCryptor: File Already Exists Error", message=f"File {os.path.basename(file_path) + '.encr'} already exists. Do you want to overwrite?") : ## I know this code is ugly
+                        os.replace(file_path, file_path + '.encr')
+                    else : error_message = "Error when renaming non .encr file to .encr file."
+                except FileNotFoundError :
+                    os.rename(file_path, file_path + ".encr")
+                file_path += '.encr'
+                
         if file_path == "" :
-            error_message = "Please select the file you want to encrypt."
-        elif not os.path.isfile(file_path) : # check 1 to see if the file exsisted 
+            error_message = f"Please select the file you want to {mode}."
+        elif not os.path.isfile(file_path) : ## Checks to see if the file exsisted 
             error_message = "Unknown file."
-        elif password == "" : # Check to see if you got a password
+        elif password == "" : ## Checks to see if you got a password
             error_message = "Please enter a password."
         elif password.startswith(password[:1]*3) : ## Checks if the first 3 letters are the same b/c strong passwords
-            error_message = "Please enter a stronger password."
-        elif len(password) < 12 or len(password) > 50: # checks if password length is the right amount if characters
-            error_message = "Password must be between 12 and 50 characters."
+            error_message = "Passwords cannot start with 3 of the same characters."
+        elif len(password) < 12 or len(password) > 50 : ## Checks if password length is the right amount if characters
+            error_message = "Password must be between 12 and 50 characters." ## The 50 char limit is arbitary as we are not really limited by anything
         else:
             error_message = None 
         
-        if error_message : # gives the error message if any
-            messagebox.showerror(title="PyQuCryptor: Encrypt Error", message=error_message)
-
+        if error_message : # Gives the error message if any
+            messagebox.showerror(title="PyQuCryptor: {Mode} Error", message=error_message)
         else: # File path + password
-            self.file_path_label.delete(0, tk.END)
+            if mode == "encrypt" : self.file_path_label.delete(0, tk.END)
             self.password_prompt.delete(0, tk.END)
             cryptor().encrypt_file(password, file_path, user_config["Delete Original (ENC)"], user_config["Scramble Filename"])
-
-    def decrypt_file(self) : 
-        password = self.password_prompt.get()
-        file_path = self.file_path_label.get()
-
-        if file_path == "" :
-            error_message = "Please select the file you want to decrypt."
-        elif file_path[len(file_path)-5:] != ".encr" : ## This checks for whether or not the file ends in .encr and if it does not end in .encr it will rename it
-            try : 
-                open(file_path + '.encr', 'rb')
-                if messagebox.askyesno(title= "PyQuCryptor: File Already Exists Error", message=f"File {os.path.basename(file_path) + '.encr'} already exists. Do you want to overwrite?") : ## I know this code is ugly
-                    os.replace(file_path, file_path + '.encr')
-                else : error_message = "Error when renaming non .encr file to .encr file."
-            except FileNotFoundError :
-                os.rename(file_path, file_path + ".encr")
-            file_path += '.encr'
-        elif not os.path.isfile(file_path): # Check 1: to see if the file exsists
-            error_message = "Error: Unknown file."
-        elif password == "": # Check 2: to see if you got a password
-            error_message = "Please enter your password."
-        elif len(password) < 12 or len(password) > 50: # checks if password length is the right amount if characters
-            error_message = "Password must be between \n12 and 50 characters."
-        
-        else:
-            error_message = None
-
-        if error_message: # gives the error message if any
-            messagebox.showerror(title="PyQuCryptor: Decrypt Error", message=error_message)
-        else: ## File + password is ready to be used
-            self.password_prompt.delete(0, tk.END)
-            cryptor().decrypt_file(password, file_path, user_config["Delete Original (DEC)"]) ## Last variable is for deleting original file. If True, it delete, if False, it does not delete
 
 ## This snippet is for multi-threading so that the app dupe itself
 if __name__ == "__main__" :
@@ -722,12 +701,13 @@ if __name__ == "__main__" :
         ## We check for updates before starting the app
         ## if the user allows for it.
         app.mainloop()
-
+    
     ## Try statement to catch the errors related to corrupted config file
-    except KeyError :
+    except KeyError as error:
+        messagebox.showerror("PyQuCryptor: Error", "PyQuCryptor ran into a key error. This is likely with a corrupted config file. The program will now reset its configuration file.")
+        user_config = config_default
         if user_config["Auto Update"] : 
             check_for_updates(True)
-        user_config = config_default
         app_controller = GUI_Controller(app=app, start_screen=" 🔒 Encrypt File ")
         app.mainloop()
     
