@@ -10,7 +10,7 @@ from Crypto.Random import get_random_bytes
 
 ## Since I have no idea how to do version control
 version = "V2.0" ## The actual version of the program. 
-build_string = "Build 2023-12-01.v2-0.main.r007" ## Build string is just for personal tracking 
+build_string = "Build 2023-12-03.v2-0.main.r008" ## Build string is just for personal tracking 
 is_dev_version = True ## Change this to False in order for check for updates as this prevents my site from getting DoSed by myself from debugging the amazon rainforest worth of bugs
 has_auto_checked = True
 
@@ -432,7 +432,12 @@ class GUI_Controller :
         ## We set the current screen to the start screen so that prev_screen is not blank b/c if it is it will cause the GUI to not load properly
         self.current_screen = start_screen
         self.set_screen(value=start_screen)
-
+        if user_config["First use"] :
+            if messagebox.askyesno("PyQuCryptor: License", "PyQuCryptor is Open-Source software licensed under the BSD-3 Clause No-Nuclear license. By using PyQuCryptor, you agree to it's license. The program developers are not responsible for any data-lost or corruption and make no warranty of this software under any circumstance. Do you accept?") :
+                user_config["First use"] = False
+            else : 
+                messagebox.showinfo("PyQuCryptor: License", "PyQuCryptor will now exit.")
+                exit()
     def set_screen(self, value) :
         ## Tries to clear the screen first
         try :
@@ -717,13 +722,15 @@ if __name__ == "__main__" :
         ## We check for updates before starting the app
         ## if the user allows for it.
         app.mainloop()
+
     ## Try statement to catch the errors related to corrupted config file
     except KeyError :
         if user_config["Auto Update"] : 
             check_for_updates(True)
         user_config = config_default
         app_controller = GUI_Controller(app=app, start_screen=" 🔒 Encrypt File ")
-        app.mainloop
+        app.mainloop()
+    
     ## On exit we write the user config back to the config file so that we save the user's settings
     with open(user_config_file_path, 'w') as config_file :
         json.dump(user_config, config_file)
