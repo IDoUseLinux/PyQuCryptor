@@ -1,6 +1,6 @@
 ## PyQuCryptor for Windows 10/11
 ## Writing crappy code is my passion
-import customtkinter, secrets, string, json, webbrowser, requests, multiprocessing ## Random stuff for GUI and backend
+import customtkinter, secrets, string, json, webbrowser, requests ## Random stuff for GUI and backend
 import os, threading, ctypes, hashlib, sys ## Crypto stuff 
 import tkinter as tk ## More GUI Stuff
 from PIL import Image
@@ -10,11 +10,12 @@ from Crypto.Random import get_random_bytes
 
 ## Since I have no idea how to do version control
 version = "V2.0" ## The actual version of the program. 
-build_string = "Build 2023-12-03.v2-0.main.r013" ## Build string is just for personal tracking 
+build_string = "Build 2023-12-03.v2-0.main.r016" ## Build string is just for personal tracking 
 is_dev_version = True ## Change this to False in order for check for updates as this prevents my site from getting DoSed by myself from debugging the amazon rainforest worth of bugs
 has_auto_checked = True
 ## Minor version such as 1.X maintain compatibility with 1.Y, major versions such as 2.X does not work with 1.X
 cryptographic_library_version = "Version 1.1" ## This is the version of the crypto stuff it doesn't have to match the version
+reason = "I honestly have no idea." ## Little easter-egg
 
 ## About dialog text
 about_txt = f"""\
@@ -25,7 +26,7 @@ Date of programming: {build_string[6:16]}
 Programming language: Python 3.12
 Made by: Jinghao Li (Backend, frontend, head-developer), Kekoa Dang (Frontend), Zoe Murata (Logo designer)
 License: BSD 3-Clause No Nuclear License 2014 
-Why did we do this: No idea
+Why did we do this: {reason}
 Is Dev version: {is_dev_version}"""
 
 ## Yes the license is a joke but it is a real license used by Oracle somehow
@@ -391,17 +392,18 @@ def check_for_updates(auto=False) :
         try :
             if str(requests.get("https://randomperson.net/pyqucryptor/eol.txt")) != "<Response [404]>" :
                 messagebox.showwarning("PyQuCryptor: End of Life", "PyQuCryptor is no longer supported! Thanks for using the software though!")
-            if str(requests.get(f"https://randomperson.net/pyqucryptor/{version}")) == "<Response [404]>" : ## We now ping using version to simplify the web request 
+            if str(requests.get(f"https://randomperson.net/pyqucryptor/{version}", timeout=5)) == "<Response [404]>" : ## We now ping using version to simplify the web request 
                 messagebox.showinfo("PyQuCryptor: Updates", "An update for PyQuCryptor is avalible, would you like to go to the GitHub page?")
             else : 
                 if not auto : 
                     messagebox.showinfo("PyQuCryptor: Updates", "PyQuCryptor is Up-To-Date")
-        except Exception as error:
-            messagebox.showerror("PyQuCryptor: Updates", f"Error whilst trying to fetch updates! Error code: {error}")
+        except Exception as error :
+            messagebox.showerror("PyQuCryptor: Updates", f"Error whilst trying to fetch updates! Error message: {error}")
     else : 
         if not auto :
             messagebox.showinfo("PyQuCryptor: Updates", "This is a development build. It does not check for updates for the sakes of my personal website not being DoSed by myself.")
 
+## This is easier to do versus a complex lambda expression
 def update_setting(key, value) :
     user_config[key] = value
 
@@ -437,6 +439,7 @@ class GUI_Controller :
             else : 
                 messagebox.showinfo("PyQuCryptor: License", "PyQuCryptor will now exit.")
                 exit()
+
     def set_screen(self, value) :
         ## Tries to clear the screen first
         try :
@@ -466,85 +469,85 @@ class GUI_Controller :
             self.has_selector = True
 
     def encrypt_screen(self) :
-        topframe = customtkinter.CTkFrame(app, width=400, height=74, fg_color="#E34039", corner_radius=0)
+        topframe = customtkinter.CTkFrame(self.app, width=400, height=74, fg_color="#E34039", corner_radius=0)
         topframe.place(x=0, y=0)
         self.all_screen_obj.append(topframe)
 
-        options_button = customtkinter.CTkButton(app, text="⚙️", font=("Arial", 30), hover_color="#75322f", bg_color="#E34039", fg_color="#E34039", command=lambda : self.set_screen("Settings"), height=30, width=30)
+        options_button = customtkinter.CTkButton(self.app, text="⚙️", font=("Arial", 30), hover_color="#75322f", bg_color="#E34039", fg_color="#E34039", command=lambda : self.set_screen("Settings"), height=30, width=30)
         options_button.pack(side=tk.TOP, anchor=tk.NE) 
         options_button.place(x = 290, y = 17)
         self.all_screen_obj.append(options_button)
 
-        applabelname = customtkinter.CTkLabel(app, text="PyQuCryptor", bg_color="#E34039", text_color="white", font=("Arial",30, "bold"))
+        applabelname = customtkinter.CTkLabel(self.app, text="PyQuCryptor", bg_color="#E34039", text_color="white", font=("Arial",30, "bold"))
         applabelname.pack(side=tk.TOP, pady=(10,0), padx=(20,0), anchor=tk.NW)
         applabelname.place(x = 20, y = 20)
         self.all_screen_obj.append(applabelname)
 
-        encrypt_button = customtkinter.CTkButton(app, text="🔒 Encrypt File", font=("Arial", 25, "bold") ,fg_color="#44AD4D", bg_color="#192E45", hover_color="#28482B", command=self.perform_crypto, height=50, width=325)
+        encrypt_button = customtkinter.CTkButton(self.app, text="🔒 Encrypt File", font=("Arial", 25, "bold") ,fg_color="#44AD4D", bg_color="#192E45", hover_color="#28482B", command=self.perform_crypto, height=50, width=325)
         encrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)    
         self.all_screen_obj.append(encrypt_button)
 
-        generate_password_button = customtkinter.CTkButton(app, text="Generate Password", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=self.generate_pwd, height=25, width=325)
+        generate_password_button = customtkinter.CTkButton(self.app, text="Generate Password", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=self.generate_pwd, height=25, width=325)
         generate_password_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
         self.all_screen_obj.append(generate_password_button)
 
-        self.password_prompt = customtkinter.CTkEntry(app, placeholder_text="12 - 50 characters", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
+        self.password_prompt = customtkinter.CTkEntry(self.app, placeholder_text="12 - 50 characters", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
         self.password_prompt.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER)
         self.all_screen_obj.append(self.password_prompt)
         
-        set_password = customtkinter.CTkLabel(app, text="Set a Password", bg_color="#192E45", font=("Arial", 18, "bold"))
+        set_password = customtkinter.CTkLabel(self.app, text="Set a Password", bg_color="#192E45", font=("Arial", 18, "bold"))
         set_password.pack(side=tk.BOTTOM, padx=(30), pady=(0,2), anchor=tk.W)   
         self.all_screen_obj.append(set_password)
             
-        encrypt_fd_button = customtkinter.CTkButton(app, text="Select File", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=lambda : self.select_file("Select file for Encryption", [("All files", "*.*"), ]), height=25, width=325)
+        encrypt_fd_button = customtkinter.CTkButton(self.app, text="Select File", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=lambda : self.select_file("Select file for Encryption", [("All files", "*.*"), ]), height=25, width=325)
         encrypt_fd_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
         self.all_screen_obj.append(encrypt_fd_button)
 
-        self.file_path_label = customtkinter.CTkEntry(app, placeholder_text="File Path", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
+        self.file_path_label = customtkinter.CTkEntry(self.app, placeholder_text="File Path", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
         self.file_path_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER)
         self.all_screen_obj.append(self.file_path_label)
 
         ## Lmao I still suck with names
-        file_path_label_label = customtkinter.CTkLabel(app, text="Select Your File", font=('Arial', 18, 'bold'), text_color='white', bg_color="#192E45")
+        file_path_label_label = customtkinter.CTkLabel(self.app, text="Select Your File", font=('Arial', 18, 'bold'), text_color='white', bg_color="#192E45")
         file_path_label_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.W)
         self.all_screen_obj.append(file_path_label_label)
 
     def decrypt_screen(self) :
-        topframe = customtkinter.CTkFrame(app, width=400, height=74, fg_color="#44AE4E", corner_radius=0)
+        topframe = customtkinter.CTkFrame(self.app, width=400, height=74, fg_color="#44AE4E", corner_radius=0)
         topframe.place(x=0, y=0)
         self.all_screen_obj.append(topframe)
 
-        options_button = customtkinter.CTkButton(app, text="⚙️", font=("Arial", 30), hover_color="#28482b", bg_color="#44AE4E", fg_color="#44AE4E", command=lambda : self.set_screen("Settings"), height=30, width=30)
+        options_button = customtkinter.CTkButton(self.app, text="⚙️", font=("Arial", 30), hover_color="#28482b", bg_color="#44AE4E", fg_color="#44AE4E", command=lambda : self.set_screen("Settings"), height=30, width=30)
         options_button.pack(side=tk.TOP, anchor=tk.NE) 
         options_button.place(x = 290, y = 17)
         self.all_screen_obj.append(options_button)
 
-        applabelname = customtkinter.CTkLabel(app, text="PyQuCryptor", bg_color="#44AE4E", text_color="white", font=("Arial",30, "bold"))
+        applabelname = customtkinter.CTkLabel(self.app, text="PyQuCryptor", bg_color="#44AE4E", text_color="white", font=("Arial",30, "bold"))
         applabelname.pack(side=tk.TOP, pady=(10,0), padx=(20,0), anchor=tk.NW)
         applabelname.place(x = 20, y = 20)
         self.all_screen_obj.append(applabelname)
 
-        decrypt_button = customtkinter.CTkButton(app, text="🔓 Decrypt File", font=("Arial", 25, "bold"), fg_color="#E34039", hover_color="#75322f", command=self.perform_crypto, height=50, width=325)
+        decrypt_button = customtkinter.CTkButton(self.app, text="🔓 Decrypt File", font=("Arial", 25, "bold"), fg_color="#E34039", hover_color="#75322f", command=self.perform_crypto, height=50, width=325)
         decrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)    
         self.all_screen_obj.append(decrypt_button)
 
-        self.password_prompt = customtkinter.CTkEntry(app, placeholder_text="E.g. 1234", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
+        self.password_prompt = customtkinter.CTkEntry(self.app, placeholder_text="E.g. 1234", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
         self.password_prompt.pack(side=tk.BOTTOM, padx=(30), pady=(0, 67), anchor=tk.CENTER)                  
         self.all_screen_obj.append(self.password_prompt)
 
-        set_password = customtkinter.CTkLabel(app, text="Enter Your Password", bg_color="#192E45", font=("Arial", 18, "bold"))
+        set_password = customtkinter.CTkLabel(self.app, text="Enter Your Password", bg_color="#192E45", font=("Arial", 18, "bold"))
         set_password.pack(side=tk.BOTTOM, padx=(30), pady=(0,2), anchor=tk.W)   
         self.all_screen_obj.append(set_password)
 
-        encrypt_fd_button = customtkinter.CTkButton(app, text="Select Encrypted File", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=lambda : self.select_file("Select the encrypted file", filetypes=[("ENCR file", "*.encr"), ("All files", "*.*")]), height=25, width=325)
+        encrypt_fd_button = customtkinter.CTkButton(self.app, text="Select Encrypted File", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=lambda : self.select_file("Select the encrypted file", filetypes=[("ENCR file", "*.encr"), ("All files", "*.*")]), height=25, width=325)
         encrypt_fd_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
         self.all_screen_obj.append(encrypt_fd_button)
 
-        self.file_path_label = customtkinter.CTkEntry(app, placeholder_text="Encrypted File Path", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
+        self.file_path_label = customtkinter.CTkEntry(self.app, placeholder_text="Encrypted File Path", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
         self.file_path_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER) 
         self.all_screen_obj.append(self.file_path_label)
 
-        file_path_label_text = customtkinter.CTkLabel(app, text="Select Your File", font=('Arial', 18, 'bold'), text_color='white', bg_color="#192E45")
+        file_path_label_text = customtkinter.CTkLabel(self.app, text="Select Your File", font=('Arial', 18, 'bold'), text_color='white', bg_color="#192E45")
         file_path_label_text.pack(side=tk.BOTTOM, padx=(30), anchor=tk.W)
         self.all_screen_obj.append(file_path_label_text)
 
@@ -555,36 +558,36 @@ class GUI_Controller :
         banner.place(x=0, y=0)
         self.all_screen_obj.append(banner)
 
-        applabelname = customtkinter.CTkLabel(app, text="Settings", bg_color="#2A4D73", text_color="white", font=("Arial",30, "bold"))
+        applabelname = customtkinter.CTkLabel(self.app, text="Settings", bg_color="#2A4D73", text_color="white", font=("Arial",30, "bold"))
         applabelname.pack(side=tk.TOP, padx=(10,0), pady=(25,0), anchor=tk.W)
         applabelname.place(x = 20, y = 20)
         self.all_screen_obj.append(applabelname)
 
-        settings_button = customtkinter.CTkButton(app, text="⚙️", font=("Arial", 30), hover_color="#192E45", bg_color="#2A4D73", fg_color="#2A4D73", command=lambda : self.set_screen(self.prev_screen), height=30, width=30)
+        settings_button = customtkinter.CTkButton(self.app, text="⚙️", font=("Arial", 30), hover_color="#192E45", bg_color="#2A4D73", fg_color="#2A4D73", command=lambda : self.set_screen(self.prev_screen), height=30, width=30)
         settings_button.pack(side=tk.TOP, anchor=tk.NE) 
         settings_button.place(x = 290, y = 17)
         self.all_screen_obj.append(settings_button)
 
-        about_button = customtkinter.CTkButton(app, text="About", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : messagebox.showinfo("PyQuCryptor: About", about_txt), border_color="#1F6AA5")
+        about_button = customtkinter.CTkButton(self.app, text="About", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : messagebox.showinfo("PyQuCryptor: About", about_txt), border_color="#1F6AA5")
         about_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
         about_button.place(x=30, y=445)
         self.all_screen_obj.append(about_button)
 
         ## About thingy
         ## Draws the app logo
-        photo_thingy = customtkinter.CTkLabel(app, image=customtkinter.CTkImage(Image.open(logo_path), size=(120, 120)), text='', bg_color='#192E45', fg_color="#192E45", text_color='white', font=("Arial", 25, 'bold'))
+        photo_thingy = customtkinter.CTkLabel(self.app, image=customtkinter.CTkImage(Image.open(logo_path), size=(120, 120)), text='', bg_color='#192E45', fg_color="#192E45", text_color='white', font=("Arial", 25, 'bold'))
         photo_thingy.pack(side=tk.TOP, padx=(0,0), pady=(0,0), anchor=tk.W)
         photo_thingy.place(x=0, y=75)
         self.all_screen_obj.append(photo_thingy)
 
         ## Draws PyQuCryptor
-        photo_thingy_label = customtkinter.CTkLabel(app, text="PyQuCryptor " + version, bg_color='#192E45', text_color='white', font=('Arial', 25, 'bold'))
+        photo_thingy_label = customtkinter.CTkLabel(self.app, text="PyQuCryptor " + version, bg_color='#192E45', text_color='white', font=('Arial', 25, 'bold'))
         photo_thingy_label.pack(side=tk.TOP, padx=(0,0), pady=(0,0), anchor=tk.S)
         photo_thingy_label.place(x=95, y=125)
         self.all_screen_obj.append(photo_thingy_label)
 
         ## Build string
-        build_tag = customtkinter.CTkLabel(app, text=f"Version: {build_string}", bg_color="#192E45", text_color='white', font=("Arial", 15, 'bold'))
+        build_tag = customtkinter.CTkLabel(self.app, text=f"Version: {build_string}", bg_color="#192E45", text_color='white', font=("Arial", 15, 'bold'))
         build_tag.pack(side=tk.TOP,padx=(0,0), pady=(195,0), anchor=tk.CENTER)
         self.all_screen_obj.append(build_tag)
         ## Setting switches
@@ -611,27 +614,27 @@ class GUI_Controller :
             self.all_screen_obj.append(frame)
 
         ## Bottom buttons
-        github_button = customtkinter.CTkButton(app, text="GitHub", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : self.redir_to_site(self.GITHUB_URL), border_color="#1F6AA5")
+        github_button = customtkinter.CTkButton(self.app, text="GitHub", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : self.redir_to_site(self.GITHUB_URL), border_color="#1F6AA5")
         github_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
         github_button.place(x=130, y=445)
         self.all_screen_obj.append(github_button)
 
-        update_button = customtkinter.CTkButton(app, text="Update", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=check_for_updates, border_color="#1F6AA5")
+        update_button = customtkinter.CTkButton(self.app, text="Update", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=check_for_updates, border_color="#1F6AA5")
         update_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
         update_button.place(x=230, y=445)
         self.all_screen_obj.append(update_button)
 
-        license_button = customtkinter.CTkButton(app, text="License", width=140, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : messagebox.showinfo("PyQuCryptor: License", license_txt), border_color="#1F6AA5")
+        license_button = customtkinter.CTkButton(self.app, text="License", width=140, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : messagebox.showinfo("PyQuCryptor: License", license_txt), border_color="#1F6AA5")
         license_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
         license_button.place(x=30, y=485)
         self.all_screen_obj.append(license_button)
 
-        other_license_button = customtkinter.CTkButton(app, text="Other", width=140, font=("Arial", 20, "bold"), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : messagebox.showinfo("PyQuCryptor: License", other_licenses), border_color="#1F6AA5")
+        other_license_button = customtkinter.CTkButton(self.app, text="Other", width=140, font=("Arial", 20, "bold"), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : messagebox.showinfo("PyQuCryptor: License", other_licenses), border_color="#1F6AA5")
         other_license_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
         other_license_button.place(x=180, y=485)
         self.all_screen_obj.append(other_license_button)
 
-        back_button = customtkinter.CTkButton(app, text="Back", font=("Arial", 25, "bold"), fg_color="#E34039", bg_color="#192E45", hover_color="#75322f", command=lambda : self.set_screen(self.prev_screen), height=50, width=325, border_color="#1F6AA5")
+        back_button = customtkinter.CTkButton(self.app, text="Back", font=("Arial", 25, "bold"), fg_color="#E34039", bg_color="#192E45", hover_color="#75322f", command=lambda : self.set_screen(self.prev_screen), height=50, width=325, border_color="#1F6AA5")
         back_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)  
         self.all_screen_obj.append(back_button)
 
