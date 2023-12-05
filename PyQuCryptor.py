@@ -8,14 +8,22 @@ from tkinter import messagebox, filedialog
 from Crypto.Cipher import AES ## More Crypto stuff
 from Crypto.Random import get_random_bytes
 
+## I also have no idea what person/pronoun I should use for comments
+## because the GUI was written by SmashTheCoder1, but he doesn't work
+## on it anymore and I am maintaining the code now. I wrote pretty 
+## much everything else besides frontend because Graphic Design is
+## not my passion and I have rewrote it with classes instead of the
+## terrible decision to not use classes and have more global variables
+## than stars in the universe.
+
 ## Since I have no idea how to do version control
 version = "V2.0" ## The actual version of the program. 
-build_string = "Build 2023-12-03.v2-0.main.r016" ## Build string is just for personal tracking 
+build_string = "Build 2023-12-03.v2-0.main.r021" ## Build string is just for personal tracking, doesn't really mean anything. Just so I can think I did something.
 is_dev_version = True ## Change this to False in order for check for updates as this prevents my site from getting DoSed by myself from debugging the amazon rainforest worth of bugs
 has_auto_checked = True
 ## Minor version such as 1.X maintain compatibility with 1.Y, major versions such as 2.X does not work with 1.X
 cryptographic_library_version = "Version 1.1" ## This is the version of the crypto stuff it doesn't have to match the version
-reason = "I honestly have no idea." ## Little easter-egg
+reason = "We honestly have no idea." ## Little easter-egg
 
 ## About dialog text
 about_txt = f"""\
@@ -31,9 +39,6 @@ Is Dev version: {is_dev_version}"""
 
 ## Yes the license is a joke but it is a real license used by Oracle somehow
 license_txt = """\
-ALL SOFTWARE BELONGS TO THEIR RESPECTIVE OWNERS!!!
-I give full consent for Congress to use this app to market the congressional app challenge in any way they seem fit as long as they include the copyright notice!!!
-
 BSD 3-Clause No Nuclear License 2014
 © 2023 IDoUseLinux/Jinghao Li (https://randomperson.net/), SmashTheCoder1/Kekoa Dang
 The use of this software is subject to license terms.
@@ -51,6 +56,7 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABI
 You acknowledge that this software is not designed, licensed or intended for use in the design, construction, operation or maintenance of any nuclear facility."""
 
 ## We need this snippet for our program to work. Yes this was stack overflow
+## But basically its related to PyInstaller and its creation of virtual folders
 def resource_path(relative_path):
     try :
         base_path = sys._MEIPASS
@@ -73,8 +79,9 @@ config_default = {
     "Auto Update" : False,
     "End of life" : False,
     "First use" : True,
-    "Gen password length" : 16,}
+    "Gen password length" : 16,} 
 
+## I remember this "thing" use to be like 20 lines long lol
 try :
     with open(user_config_file_path, 'r') as config_file :
         user_config = json.load(config_file)
@@ -109,7 +116,8 @@ def request_uac_elevation() :
         except :
             is_user_admin = False
             return False
-    else: return True
+    else: 
+        return True
 
 class cryptor() :
     cryptographic_library_version = cryptographic_library_version ## This is the version of the crypto stuff it doesn't have to match the build string
@@ -171,6 +179,7 @@ class cryptor() :
         encryptedList.append(self.hashtemp)
 
         encryptedList_copy = encryptedList.copy() ## Temporary copy of non-encrypted version of encrypted file header
+
         ## This stupid line of code somehow **worked first try**
         ## But basically it takes in a password, combines it with 
         ## a salt and turns it into an encryption key that is used
@@ -406,7 +415,9 @@ def check_for_updates(auto=False) :
 ## This is easier to do versus a complex lambda expression
 def update_setting(key, value) :
     user_config[key] = value
-
+    if "Delete" in key and value :
+        messagebox.showwarning("PyQuCryptor: ShadowCopy Warning", "PyQuCryptor cannot delete ShadowCopies. It is recommended that you manually delete the ShadowCopies of the files yourself or disable it in the folder that your file is located in.")
+        
 ## This is GUI stuff now
 class GUI_Controller :
     all_screen_obj = []
@@ -476,7 +487,7 @@ class GUI_Controller :
         topframe.place(x=0, y=0)
         self.all_screen_obj.append(topframe)
 
-        options_button = customtkinter.CTkButton(self.app, text="⚙️", font=("Arial", 30), hover_color="#75322f", bg_color="#E34039", fg_color="#E34039", command=lambda : self.set_screen("Settings"), height=30, width=30)
+        options_button = customtkinter.CTkButton(topframe, text="⚙️", font=("Arial", 30), hover_color="#75322f", bg_color="#E34039", fg_color="#E34039", command=lambda : self.set_screen("Settings"), height=30, width=30)
         options_button.pack(side=tk.TOP, anchor=tk.NE) 
         options_button.place(x = 290, y = 17)
         self.all_screen_obj.append(options_button)
@@ -487,14 +498,14 @@ class GUI_Controller :
         self.all_screen_obj.append(applabelname)
 
         encrypt_button = customtkinter.CTkButton(self.app, text="🔒 Encrypt File", font=("Arial", 25, "bold") ,fg_color="#44AD4D", bg_color="#192E45", hover_color="#28482B", command=self.perform_crypto, height=50, width=325)
-        encrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)    
+        encrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10, 25), anchor=tk.CENTER)    
         self.all_screen_obj.append(encrypt_button)
 
         generate_password_button = customtkinter.CTkButton(self.app, text="Generate Password", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=self.generate_pwd, height=25, width=325)
         generate_password_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
         self.all_screen_obj.append(generate_password_button)
 
-        self.password_prompt = customtkinter.CTkEntry(self.app, placeholder_text="12 - 50 characters", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
+        self.password_prompt = customtkinter.CTkEntry(self.app, placeholder_text="12 - 50 characters", height=40, width=325, bg_color="#192E45", font=("Arial", 20)) 
         self.password_prompt.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER)
         self.all_screen_obj.append(self.password_prompt)
         
@@ -506,7 +517,7 @@ class GUI_Controller :
         encrypt_fd_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
         self.all_screen_obj.append(encrypt_fd_button)
 
-        self.file_path_label = customtkinter.CTkEntry(self.app, placeholder_text="File Path", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
+        self.file_path_label = customtkinter.CTkEntry(self.app, placeholder_text="File Path", height=40, width=325, bg_color="#192E45", font=("Arial", 20)) 
         self.file_path_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER)
         self.all_screen_obj.append(self.file_path_label)
 
@@ -534,19 +545,19 @@ class GUI_Controller :
         decrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)    
         self.all_screen_obj.append(decrypt_button)
 
-        self.password_prompt = customtkinter.CTkEntry(self.app, placeholder_text="E.g. 1234", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
-        self.password_prompt.pack(side=tk.BOTTOM, padx=(30), pady=(0, 67), anchor=tk.CENTER)                  
+        self.password_prompt = customtkinter.CTkEntry(self.app, placeholder_text="E.g. 1234", height=40, width=325, bg_color="#192E45", font=("Arial", 20)) 
+        self.password_prompt.pack(side=tk.BOTTOM, padx=(30), pady=(0, 65), anchor=tk.CENTER)                  
         self.all_screen_obj.append(self.password_prompt)
 
         set_password = customtkinter.CTkLabel(self.app, text="Enter Your Password", bg_color="#192E45", font=("Arial", 18, "bold"))
         set_password.pack(side=tk.BOTTOM, padx=(30), pady=(0,2), anchor=tk.W)   
         self.all_screen_obj.append(set_password)
 
-        encrypt_fd_button = customtkinter.CTkButton(self.app, text="Select Encrypted File", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=lambda : self.select_file("Select the encrypted file", filetypes=[("ENCR file", "*.encr"), ("All files", "*.*")]), height=25, width=325)
+        encrypt_fd_button = customtkinter.CTkButton(self.app, text="Select Encrypted File", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=lambda : self.select_file("Select the encrypted file", file_etx=[("ENCR file", "*.encr"), ("All files", "*.*")]), height=25, width=325)
         encrypt_fd_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
         self.all_screen_obj.append(encrypt_fd_button)
 
-        self.file_path_label = customtkinter.CTkEntry(self.app, placeholder_text="Encrypted File Path", height=35, width=325, bg_color="#192E45", font=("Arial", 15)) 
+        self.file_path_label = customtkinter.CTkEntry(self.app, placeholder_text="Encrypted File Path", height=40, width=325, bg_color="#192E45", font=("Arial", 20)) 
         self.file_path_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER) 
         self.all_screen_obj.append(self.file_path_label)
 
@@ -583,8 +594,8 @@ class GUI_Controller :
         photo_thingy.place(x=0, y=75)
         self.all_screen_obj.append(photo_thingy)
 
-        ## Draws PyQuCryptor
-        photo_thingy_label = customtkinter.CTkLabel(self.app, text="PyQuCryptor " + version, bg_color='#192E45', text_color='white', font=('Arial', 25, 'bold'))
+        ## Draws PyQuCryptor with the version
+        photo_thingy_label = customtkinter.CTkLabel(self.app, text=f"PyQuCryptor {version}", bg_color='#192E45', text_color='white', font=('Arial', 25, 'bold'))
         photo_thingy_label.pack(side=tk.TOP, padx=(0,0), pady=(0,0), anchor=tk.S)
         photo_thingy_label.place(x=95, y=125)
         self.all_screen_obj.append(photo_thingy_label)
@@ -593,6 +604,7 @@ class GUI_Controller :
         build_tag = customtkinter.CTkLabel(self.app, text=f"Version: {build_string}", bg_color="#192E45", text_color='white', font=("Arial", 15, 'bold'))
         build_tag.pack(side=tk.TOP,padx=(0,0), pady=(195,0), anchor=tk.CENTER)
         self.all_screen_obj.append(build_tag)
+
         ## Setting switches
         config_list = ["Delete Original (ENC)", "Delete Original (DEC)", "Scramble Filename", "Auto Update", ]
         config_list_status = []
@@ -603,13 +615,13 @@ class GUI_Controller :
                 config_list_status.append(customtkinter.StringVar(value="off"))
 
         for index, config in enumerate(config_list) :
-            frame = customtkinter.CTkFrame(master=app, width=350, height=50, corner_radius=0, fg_color="#2A4D73")
+            frame = customtkinter.CTkFrame(self.app, width=350, height=50, corner_radius=0, fg_color="#2A4D73")
             frame.place(x=0, y=220 + index * 55)
 
-            switch = customtkinter.CTkSwitch(master=frame, text="", command= lambda: update_setting(config, not user_config[config]), variable=config_list_status[index], switch_height=35, switch_width=60, onvalue="on", offvalue="off", progress_color="#44AE4E")
+            switch = customtkinter.CTkSwitch(frame, text="", command= lambda conf = config: update_setting(conf, not user_config[conf]), variable=config_list_status[index], switch_height=35, switch_width=60, onvalue="on", offvalue="off", progress_color="#44AE4E")
             switch.place(relx=0.90, rely=0.5, anchor=tk.CENTER)
 
-            frame_label = customtkinter.CTkLabel(master=frame, text=config, text_color="white", font=("Arial", 20, "bold"))
+            frame_label = customtkinter.CTkLabel(frame, text=config, text_color="white", font=("Arial", 20, "bold"))
             frame_label.place(relx=0.35, rely=0.75, anchor=tk.S)
             ## We need to add them to backwards to delete them in the correct order otherwise an error will happen
             self.all_screen_obj.append(frame_label)
@@ -658,7 +670,7 @@ class GUI_Controller :
         password = self.password_prompt.get()
         file_path = self.file_path_label.get()
         if op_mode == " 🔒 Encrypt File " :
-            Mode, mode = "Encrypt", "encrypt"
+            Mode, mode = "Encrypt", "encrypt" ## This is cheesey...
             ## Checks for VeraCrypt containers
             if file_path[len(file_path)-3:] == ".hc" :
                 if  messagebox.askyesno(title="PyQuCryptor: Encrypt", message="Are you sure you want to encrypt a VeraCrypt container? VeraCrypt containers that expands can cause errors with PyQuCryptor.") : pass
@@ -690,13 +702,13 @@ class GUI_Controller :
             error_message = None 
         
         if error_message : # Gives the error message if any
-            messagebox.showerror(title="PyQuCryptor: {Mode} Error", message=error_message)
+            messagebox.showerror(title=f"PyQuCryptor: {Mode} Error", message=error_message)
         else: # File path + password
             if mode == "encrypt" : self.file_path_label.delete(0, tk.END)
             self.password_prompt.delete(0, tk.END)
             cryptor().encrypt_file(password, file_path, user_config["Delete Original (ENC)"], user_config["Scramble Filename"])
 
-## This snippet is for multi-threading so that the app dupe itself
+## This snippet is for multi-threading so that the app  doesn'tdupe itself
 if __name__ == "__main__" :
     app = customtkinter.CTk()
     try :
