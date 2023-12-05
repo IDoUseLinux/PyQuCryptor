@@ -3,9 +3,6 @@
 ## PyCryptoDome for Encryption
 pycryptodome
 
-## Hashlib for hashing, I didn't know that PyCryptoDome had hashing support LOL
-hashlib
-
 ## CustomTkinter for GUI that is usable
 customtkinter
 
