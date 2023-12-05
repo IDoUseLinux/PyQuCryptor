@@ -1,0 +1,19 @@
+## Requirements for PyQuCryptor
+
+## PyCryptoDome for Encryption
+pycryptodome
+
+## Hashlib for hashing, I didn't know that PyCryptoDome had hashing support LOL
+hashlib
+
+## CustomTkinter for GUI that is usable
+customtkinter
+
+## Pillow for GUI elements
+pillow
+
+## Some random backend stuff for admin checking, generally the program doesn't need admin rights
+ctypes
+## Requests for auto-update
+requests
+
