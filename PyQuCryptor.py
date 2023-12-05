@@ -429,7 +429,10 @@ class GUI_Controller :
         self.app.config(background="#192e45")
         self.has_selector = False
         self.selector_var = customtkinter.StringVar(value=start_screen)
-        self.app.bind("<Enter>", lambda event : self.perform_crypto)
+
+        ## Key bind for Enter which performs crypto operations, the lambda function is to prevent
+        ## app.bind() sending an argument right up self.perform_crypto's a-- I mean nothing
+        self.app.bind("<Return>", lambda event : self.perform_crypto())
         ## We set the current screen to the start screen so that prev_screen is not blank b/c if it is it will cause the GUI to not load properly
         self.current_screen = start_screen
         self.set_screen(value=start_screen)
