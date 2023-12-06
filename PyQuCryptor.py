@@ -18,7 +18,7 @@ from Crypto.Random import get_random_bytes
 
 ## Since I have no idea how to do version control
 version = "V2.0" ## The actual version of the program. 
-build_string = "Build 2023-12-05.v2-0.main.r022" ## Build string is just for personal tracking, doesn't really mean anything. Just so I can think I did something.
+build_string = "Build 2023-12-05.v2-0.main.r025" ## Build string is just for personal tracking, doesn't really mean anything. Just so I can think I did something.
 is_dev_version = True ## Change this to False in order for check for updates as this prevents my site from getting DoSed by myself from debugging the amazon rainforest worth of bugs
 has_auto_checked = True
 ## Minor version such as 1.X maintain compatibility with 1.Y, major versions such as 2.X does not work with 1.X
@@ -68,7 +68,7 @@ with open(resource_path("resources/other_licenses.txt"), 'r') as license_file:
     other_licenses = license_file.read()
 
 ## Get's user's home dir so we can store configs in the user's home folder
-user_config_file_path = "C:/Users/" + os.getlogin() + "/pyqucryptor.json"
+user_config_file_path =  os.path.expanduser("~") + "/pyqucryptor.json"
 
 logo_path = resource_path('resources/PyQuCryptorv4.png')
 
@@ -120,8 +120,7 @@ def request_uac_elevation() :
         return True
 
 class cryptor() :
-    cryptographic_library_version = cryptographic_library_version ## This is the version of the crypto stuff it doesn't have to match the build string
-    
+
     def __init__(self) -> None : ## IDK what this is for lmao I used the auto-generated thingy
         pass
 
@@ -225,9 +224,9 @@ class cryptor() :
                 ## Encrypted SHA3-512 Hash/Checksum
                 encrypted_file.write(encryptedList[2])
 
+                ## Rest of the encrypted file
                 buffer = plain_file.read(65536)
                 while len(buffer) > 0 :
-                    ## Encrypted File
                     encrypted_file.write(cipher.encrypt(buffer))
                     buffer = plain_file.read(65536)
                 
@@ -478,7 +477,7 @@ class GUI_Controller :
     
     def spawn_selector(self) :
         if not self.has_selector :
-            self.selectmode = customtkinter.CTkSegmentedButton(self.app, values=[" 🔒 Encrypt File ", " 🔓 Decrypt File "], font=("Arial", 20, "bold"), selected_color="#393939", fg_color="#1A1A1A", unselected_color="#141414", unselected_hover_color="#2E2E2E", selected_hover_color="#393939",border_width=8, corner_radius=10, height=50, bg_color="#192E45", variable=self.selector_var, width=325, command=self.set_screen)
+            self.selectmode = customtkinter.CTkSegmentedButton(self.app, values=[" 🔒 Encrypt File ", " 🔓 Decrypt File "], font=("Arial", 20, "bold"), selected_color="#393939", fg_color="#1A1A1A", unselected_color="#141414", unselected_hover_color="#2E2E2E", selected_hover_color="#393939", border_width=7, corner_radius=10, width=325, height=55, bg_color="#192E45", variable=self.selector_var, command=self.set_screen)
             self.selectmode.pack(side=customtkinter.TOP, padx=10, pady=(100,0)) 
             self.has_selector = True
 
@@ -505,7 +504,7 @@ class GUI_Controller :
         generate_password_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
         self.all_screen_obj.append(generate_password_button)
 
-        self.password_prompt = customtkinter.CTkEntry(self.app, placeholder_text="12 - 50 characters", height=40, width=325, bg_color="#192E45", font=("Arial", 20)) 
+        self.password_prompt = customtkinter.CTkEntry(self.app, placeholder_text="12 - 50 characters", height=40, width=325, fg_color="#0F2845", bg_color="#192E45", border_color="#1A1A1A", font=("Arial", 20)) 
         self.password_prompt.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER)
         self.all_screen_obj.append(self.password_prompt)
         
@@ -517,7 +516,7 @@ class GUI_Controller :
         encrypt_fd_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
         self.all_screen_obj.append(encrypt_fd_button)
 
-        self.file_path_label = customtkinter.CTkEntry(self.app, placeholder_text="File Path", height=40, width=325, bg_color="#192E45", font=("Arial", 20)) 
+        self.file_path_label = customtkinter.CTkEntry(self.app, placeholder_text="File Path", height=40, width=325, fg_color="#0F2845", bg_color="#192E45", border_color="#1A1A1A", font=("Arial", 20)) 
         self.file_path_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER)
         self.all_screen_obj.append(self.file_path_label)
 
@@ -545,7 +544,7 @@ class GUI_Controller :
         decrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)    
         self.all_screen_obj.append(decrypt_button)
 
-        self.password_prompt = customtkinter.CTkEntry(self.app, placeholder_text="E.g. 1234", height=40, width=325, bg_color="#192E45", font=("Arial", 20)) 
+        self.password_prompt = customtkinter.CTkEntry(self.app, placeholder_text="E.g. 1234", height=40, width=325, font=("Arial", 20), fg_color="#0F2845", bg_color="#192E45", border_color="#1A1A1A") 
         self.password_prompt.pack(side=tk.BOTTOM, padx=(30), pady=(0, 65), anchor=tk.CENTER)                  
         self.all_screen_obj.append(self.password_prompt)
 
@@ -557,7 +556,7 @@ class GUI_Controller :
         encrypt_fd_button.pack(side=tk.BOTTOM, padx=(30), pady=(15, 25), anchor=tk.CENTER)
         self.all_screen_obj.append(encrypt_fd_button)
 
-        self.file_path_label = customtkinter.CTkEntry(self.app, placeholder_text="Encrypted File Path", height=40, width=325, bg_color="#192E45", font=("Arial", 20)) 
+        self.file_path_label = customtkinter.CTkEntry(self.app, placeholder_text="Encrypted File Path", height=40, width=325, font=("Arial", 20), fg_color="#0F2845", bg_color="#192E45", border_color="#1A1A1A") 
         self.file_path_label.pack(side=tk.BOTTOM, padx=(30), anchor=tk.CENTER) 
         self.all_screen_obj.append(self.file_path_label)
 
@@ -664,19 +663,18 @@ class GUI_Controller :
         characters = string.ascii_letters + string.digits + string.punctuation
         self.password_prompt.delete(0, tk.END)
         self.password_prompt.insert(0, ''.join(secrets.choice(characters) for _ in range(pwd_length)))
-
-    def perform_crypto(self) : 
-        op_mode = self.current_screen
+    
+    def perform_crypto(self) : ## Performs the encryption/decryption depending on the screen
         password = self.password_prompt.get()
         file_path = self.file_path_label.get()
-        if op_mode == " 🔒 Encrypt File " :
-            Mode, mode = "Encrypt", "encrypt" ## This is cheesey...
+        if self.current_screen == " 🔒 Encrypt File " :
+            Mode, mode = "Encrypt", "encrypt" ## This is cheesey... but it works
             ## Checks for VeraCrypt containers
             if file_path[len(file_path)-3:] == ".hc" :
                 if  messagebox.askyesno(title="PyQuCryptor: Encrypt", message="Are you sure you want to encrypt a VeraCrypt container? VeraCrypt containers that expands can cause errors with PyQuCryptor.") : pass
                 else : raise TypeError("User does not want to encrypt VeraCrypt container.")
 
-        elif op_mode == " 🔓 Decrypt File " :
+        elif self.current_screen == " 🔓 Decrypt File " :
             Mode, mode = "Decrypt", "decrypt"
             if file_path[len(file_path)-5:] != ".encr" : ## This checks for whether or not the file ends in .encr and if it does not end in .encr it will rename it
                 try : 
@@ -708,7 +706,7 @@ class GUI_Controller :
             self.password_prompt.delete(0, tk.END)
             cryptor().encrypt_file(password, file_path, user_config["Delete Original (ENC)"], user_config["Scramble Filename"])
 
-## This snippet is for multi-threading so that the app doesn't dupe itself
+## This if statement is for multi-threading so that the app doesn't dupe itself
 if __name__ == "__main__" :
     app = customtkinter.CTk()
     try :
@@ -721,13 +719,16 @@ if __name__ == "__main__" :
         app.mainloop()
     
     ## Try statement to catch the errors related to corrupted config file
-    except KeyError as error:
+    except KeyError as error :
         messagebox.showerror("PyQuCryptor: Error", "PyQuCryptor ran into a key error. This is likely with a corrupted config file. The program will now reset its configuration file.")
         user_config = config_default
         if user_config["Auto Update"] : 
             check_for_updates(True)
         app_controller = GUI_Controller(app=app, start_screen=" 🔒 Encrypt File ")
         app.mainloop()
+    ## This is added for better debugging and user experience
+    except Exception as error :
+        messagebox.showerror("PyQuCryptor: Error", f"PyQuCryptor encountered an unexpected error. Error message: {error}. PyQuCryptor will now close.")
     
     ## On exit we write the user config back to the config file so that we save the user's settings
     with open(user_config_file_path, 'w') as config_file :
