@@ -18,7 +18,7 @@ from Crypto.Random import get_random_bytes
 
 ## Since I have no idea how to do version control
 version = "V2.0" ## The actual version of the program. 
-build_string = "Build 2023-12-03.v2-0.main.r021" ## Build string is just for personal tracking, doesn't really mean anything. Just so I can think I did something.
+build_string = "Build 2023-12-05.v2-0.main.r022" ## Build string is just for personal tracking, doesn't really mean anything. Just so I can think I did something.
 is_dev_version = True ## Change this to False in order for check for updates as this prevents my site from getting DoSed by myself from debugging the amazon rainforest worth of bugs
 has_auto_checked = True
 ## Minor version such as 1.X maintain compatibility with 1.Y, major versions such as 2.X does not work with 1.X
@@ -46,7 +46,7 @@ The use of this software is subject to license terms.
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
     - Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-    - Redistributions in binary form must reproduce the above copyright notice, this list of con ditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+    - Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
     - Neither the name of the developers nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -102,7 +102,7 @@ def is_admin() :
         is_user_admin = False
         return False
 ## For the like 1 other person that will ever see this program
-## This segment of code requests for admin privilidges.
+## This segment of code requests for admin privileges.
 def request_uac_elevation() :
     global is_user_admin
     if is_user_admin == False :
@@ -160,7 +160,7 @@ class cryptor() :
 
         cipher = AES.new(encryption_key, AES.MODE_CTR, nonce=get_random_bytes(11), use_aesni=True)
 
-        ## Passwod salt
+        ## Password salt
         nonEncList.append(get_random_bytes(24))
 
         ## Encryption Nonce
@@ -236,9 +236,9 @@ class cryptor() :
         messagebox.showinfo(title="PyQuCryptor: Encryption Complete", message="Finished Encryption of file(s).") 
 
     def decrypt_file(self, password, path_to_file, delete_og_file = False) :
-        ## Basically we are doing the excapt same thing as the
+        ## Basically we are doing the exact same thing as the
         ## encrypt_file() function except its backwards and it
-        ## requires way less inputs inorder to get an output
+        ## requires way less inputs in order to get an output
         nonEncList = []
         encryptedList = []
         try :
@@ -361,8 +361,8 @@ class cryptor() :
         messagebox.showinfo(title="PyQucryptor: Decryption Complete", message= "Finished Decryption of file.")
 
     def hash_object(self, object_to_hash=None, file_path=None, mode="r") :
-        ## But heres the API doc anyways, if you specify the object_to_hash, then its going to be using the older hash algo
-        ## but if you specify file_path you will get the new algo which will read the file by chunck to increase perf 
+        ## But heres the doc anyways, if you specify the object_to_hash, then its going to be using the older hash algo
+        ## but if you specify file_path you will get the new algo which will read the file by chunks to increase perf 
         ## If the mode is 'r' it will return, if it is a it will assign, but any other character also works for this
         self.hasher = hashlib.sha3_512()
         if file_path != None :
@@ -394,7 +394,7 @@ def secure_erase(file_path) :
             request_uac_elevation()
             os.remove(file_path)
         except :
-            messagebox.showerror(title = "PyQuCryptor: File Deletion Error", message="Error while deleing file.")
+            messagebox.showerror(title = "PyQuCryptor: File Deletion Error", message="Error while deleting file.")
 
 def check_for_updates(auto=False) :
     if not is_dev_version :
@@ -402,7 +402,7 @@ def check_for_updates(auto=False) :
             if str(requests.get("https://randomperson.net/pyqucryptor/eol.txt")) != "<Response [404]>" :
                 messagebox.showwarning("PyQuCryptor: End of Life", "PyQuCryptor is no longer supported! Thanks for using the software though!")
             if str(requests.get(f"https://randomperson.net/pyqucryptor/{version}", timeout=5)) == "<Response [404]>" : ## We now ping using version to simplify the web request 
-                messagebox.showinfo("PyQuCryptor: Updates", "An update for PyQuCryptor is avalible, would you like to go to the GitHub page?")
+                messagebox.showinfo("PyQuCryptor: Updates", "An update for PyQuCryptor is available, would you like to go to the GitHub page?")
             else : 
                 if not auto : 
                     messagebox.showinfo("PyQuCryptor: Updates", "PyQuCryptor is Up-To-Date")
@@ -697,7 +697,7 @@ class GUI_Controller :
         elif password.startswith(password[:1]*3) : ## Checks if the first 3 letters are the same b/c strong passwords
             error_message = "Passwords cannot start with 3 of the same characters."
         elif len(password) < 12 or len(password) > 50 : ## Checks if password length is the right amount if characters
-            error_message = "Password must be between 12 and 50 characters." ## The 50 char limit is arbitary as we are not really limited by anything
+            error_message = "Password must be between 12 and 50 characters." ## The 50 char limit is arbitrary as we are not really limited by anything
         else:
             error_message = None 
         
@@ -708,7 +708,7 @@ class GUI_Controller :
             self.password_prompt.delete(0, tk.END)
             cryptor().encrypt_file(password, file_path, user_config["Delete Original (ENC)"], user_config["Scramble Filename"])
 
-## This snippet is for multi-threading so that the app  doesn'tdupe itself
+## This snippet is for multi-threading so that the app doesn't dupe itself
 if __name__ == "__main__" :
     app = customtkinter.CTk()
     try :
