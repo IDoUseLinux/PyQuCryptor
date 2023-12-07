@@ -11,19 +11,19 @@ from Crypto.Random import get_random_bytes
 ## I also have no idea what person/pronoun I should use for comments
 ## because the GUI was written by SmashTheCoder1, but he doesn't work
 ## on it anymore and I am maintaining the code now. I wrote pretty 
-## much everything else besides frontend because Graphic Design is
-## not my passion and I have rewrote it with classes instead of the
+## much everything else besides frontend because Graphic Design is not
+## my passion and I have rewrote it with classes instead of Kekoa's
 ## terrible decision to not use classes and have more global variables
 ## than stars in the universe.
 
 ## Since I have no idea how to do version control
 version = "V2.0" ## The actual version of the program. 
-build_string = "Build 2023-12-05.v2-0.main.r025" ## Build string is just for personal tracking, doesn't really mean anything. Just so I can think I did something.
-is_dev_version = True ## Change this to False in order for check for updates as this prevents my site from getting DoSed by myself from debugging the amazon rainforest worth of bugs
+build_string = "Build 2023-12-05.v2-0.stable.r031" ## Build string is just for personal tracking, doesn't really mean anything. Just so I can think I did something.
+is_dev_version = False ## Change this to False in order for check for updates as this prevents my site from getting DoSed by myself from debugging the amazon rainforest worth of bugs
 has_auto_checked = True
 ## Minor version such as 1.X maintain compatibility with 1.Y, major versions such as 2.X does not work with 1.X
 cryptographic_library_version = "Version 1.1" ## This is the version of the crypto stuff it doesn't have to match the version
-reason = "We honestly have no idea." ## Little easter-egg
+reason = "I honestly have no idea." ## Little easter-egg
 
 ## About dialog text
 about_txt = f"""\
@@ -35,7 +35,7 @@ Programming language: Python 3.12
 Made by: Jinghao Li (Backend, frontend, head-developer), Kekoa Dang (Frontend), Zoe Murata (Logo designer)
 License: BSD 3-Clause No Nuclear License 2014 
 Why did we do this: {reason}
-Is Dev version: {is_dev_version}"""
+Is Dev Version: {is_dev_version}"""
 
 ## Yes the license is a joke but it is a real license used by Oracle somehow
 license_txt = """\
@@ -125,7 +125,7 @@ class cryptor() :
         pass
 
     ## AES-256-CTR is used for encryption
-    def encrypt_file(self, password, path_to_file, delete_og_file=False, scramble_filename = False) :
+    def encrypt_file(self, password, path_to_file, delete_og_file, scramble_filename) :
         ## nonEncList is for unencrypted metadata of the file. encryptedList is for the encrypted metadata.
         nonEncList = [] ## Non-encrypted file header
         encryptedList = [] ## Encrypted file header
@@ -234,7 +234,7 @@ class cryptor() :
             secure_erase(path_to_file)
         messagebox.showinfo(title="PyQuCryptor: Encryption Complete", message="Finished Encryption of file(s).") 
 
-    def decrypt_file(self, password, path_to_file, delete_og_file = False) :
+    def decrypt_file(self, password, path_to_file, delete_og_file) :
         ## Basically we are doing the exact same thing as the
         ## encrypt_file() function except its backwards and it
         ## requires way less inputs in order to get an output
@@ -322,7 +322,7 @@ class cryptor() :
             raise Exception("File encrypted file hashes does not match.")
         
         else :
-            if delete_og_file == False :
+            if not delete_og_file :
                 try : 
                     open(str.replace(path_to_file, ".encr", ''))
                     if messagebox.askyesno(title="PyQucryptor: File Already Exists Error", message="A file with the same name already exists. Do you want to overwrite?") :
@@ -337,14 +337,14 @@ class cryptor() :
                     messagebox.showerror(title="Decrypt Error", message=f"Unable to rename file (Is the file just called .encr?), file renamed to {____ + '.temp'}")
             
             __ = False ## I just need a variable name
-            if delete_og_file == True :
+            if delete_og_file :
                 try :
                     open(str.replace(path_to_file, ".encr", ''), 'r')
                     if messagebox.askyesno(title="PyQuCryptor: File Already Exists Error", message="A file with the same name already exists. Do you want to overwrite?") :
                         os.remove(str.replace(path_to_file, ".encr", '')) ## I dont think we have to secure erase this b/c in theory its not related to encrypted data
                     else : __ = True ## I just need a variable name
                         
-                except FileNotFoundError : pass
+                except FileNotFoundError : pass ## Incase anyone deletes the encrypted file during encryption
                 except Exception : os.remove(path_to_file + '.temp') ## Deletes the temp file if anything goes wrong
 
                 if __ :
@@ -400,20 +400,25 @@ def check_for_updates(auto=False) :
         try :
             if str(requests.get("https://randomperson.net/pyqucryptor/eol.txt")) != "<Response [404]>" :
                 messagebox.showwarning("PyQuCryptor: End of Life", "PyQuCryptor is no longer supported! Thanks for using the software though!")
-            if str(requests.get(f"https://randomperson.net/pyqucryptor/{version}", timeout=5)) == "<Response [404]>" : ## We now ping using version to simplify the web request 
-                messagebox.showinfo("PyQuCryptor: Updates", "An update for PyQuCryptor is available, would you like to go to the GitHub page?")
+            
+            web_latest = requests.get(f"https://randomperson.net/pyqucryptor/newest", timeout=5).content.decode('utf-8') ## We get using the newest version
+            if web_latest != build_string :
+                if messagebox.askyesno("PyQuCryptor: Updates", f"An update for PyQuCryptor is available. Build: {web_latest}, would you like to go to the GitHub page?") :
+                    webbrowser.open("https://github.com/IDoUseLinux/PyQuCryptor")
             else : 
                 if not auto : 
                     messagebox.showinfo("PyQuCryptor: Updates", "PyQuCryptor is Up-To-Date")
+
         except Exception as error :
             messagebox.showerror("PyQuCryptor: Updates", f"Error whilst trying to fetch updates! Error message: {error}")
     else : 
         if not auto :
-            messagebox.showinfo("PyQuCryptor: Updates", "This is a development build. It does not check for updates for the sakes of my personal website not being DoSed by myself.")
+            messagebox.showinfo("PyQuCryptor: Updates", "This is a development build. It does not check for updates for the sakes of my personal website not being DoSed by myself. This can be disabled by setting the is_dev_version variable to False")
 
 ## This is easier to do versus a complex lambda expression
 def update_setting(key, value) :
     user_config[key] = value
+    ## Warns the user about Windows ShadowCopy
     if "Delete" in key and value :
         messagebox.showwarning("PyQuCryptor: ShadowCopy Warning", "PyQuCryptor cannot delete ShadowCopies. It is recommended that you manually delete the ShadowCopies of the files yourself or disable it in the folder that your file is located in.")
         
@@ -423,10 +428,11 @@ class GUI_Controller :
     current_screen = ""
     prev_screen = ""
     GITHUB_URL = "https://github.com/IDoUseLinux/PyQuCryptor/"
-    WEBSITE_URL = "https://randomperson.net/PyQuCryptor/"
-    RICKROLL_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    WEBSITE_URL = "https://randomperson.net/PyQuCryptor/about"
+    RICKROLL_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ" ## Another easteregg
     has_selector = False
     selectmode = None
+    app_logo = customtkinter.CTkImage(Image.open(logo_path), size=(120, 120))
 
     def __init__(self, app, start_screen) :        
         self.app = app
@@ -440,18 +446,22 @@ class GUI_Controller :
         self.has_selector = False
         self.selector_var = customtkinter.StringVar(value=start_screen)
 
-        ## Key bind for Enter which performs crypto operations, the lambda function is to prevent
-        ## app.bind() sending an argument right up self.perform_crypto's a-- I mean nothing
-        self.app.bind("<Return>", lambda event : self.perform_crypto())
-        ## We set the current screen to the start screen so that prev_screen is not blank b/c if it is it will cause the GUI to not load properly
-        self.current_screen = start_screen
-        self.set_screen(value=start_screen)
         if user_config["First use"] :
-            if messagebox.askyesno("PyQuCryptor: License", "PyQuCryptor is Open-Source software licensed under the BSD-3 Clause No-Nuclear license. By using PyQuCryptor, you agree to it's license. The program developers are not responsible for any data-lost or corruption and make no warranty of this software under any circumstance. Do you accept?") :
+            if messagebox.askyesno("PyQuCryptor: License", "PyQuCryptor is Open-Source Software licensed under the BSD-3 Clause No-Nuclear License. By using PyQuCryptor, You agree to it's License. PyQuCryptor's developers are not responsible for any data-lost or corruption and make no warranty of this software under any circumstance. Do you accept?") :
                 user_config["First use"] = False
             else : 
                 messagebox.showinfo("PyQuCryptor: License", "PyQuCryptor will now exit.")
                 exit()
+        if user_config["Auto Update"] : 
+            check_for_updates(True)
+
+        ## Key bind for Enter which performs crypto operations, the lambda function is to prevent
+        ## app.bind() sending an argument right up self.perform_crypto's a-- I mean nothing
+        self.app.bind("<Return>", lambda event : self.perform_crypto())
+
+        ## We set the current screen to the start screen so that prev_screen is not blank b/c if it is it will cause the GUI to not load properly
+        self.current_screen = start_screen
+        self.set_screen(value=start_screen)
 
     def set_screen(self, value) :
         ## Tries to clear the screen first
@@ -482,7 +492,7 @@ class GUI_Controller :
             self.has_selector = True
 
     def encrypt_screen(self) :
-        topframe = customtkinter.CTkFrame(self.app, width=400, height=74, fg_color="#E34039", corner_radius=0)
+        topframe = customtkinter.CTkFrame(self.app, width=400, height=75, fg_color="#E34039", corner_radius=0)
         topframe.place(x=0, y=0)
         self.all_screen_obj.append(topframe)
 
@@ -497,7 +507,7 @@ class GUI_Controller :
         self.all_screen_obj.append(applabelname)
 
         encrypt_button = customtkinter.CTkButton(self.app, text="🔒 Encrypt File", font=("Arial", 25, "bold") ,fg_color="#44AD4D", bg_color="#192E45", hover_color="#28482B", command=self.perform_crypto, height=50, width=325)
-        encrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10, 25), anchor=tk.CENTER)    
+        encrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10, 30), anchor=tk.CENTER)    
         self.all_screen_obj.append(encrypt_button)
 
         generate_password_button = customtkinter.CTkButton(self.app, text="Generate Password", font=("Arial", 18), fg_color="#393939", bg_color="#192E45", hover_color="#2E2E2E", command=self.generate_pwd, height=25, width=325)
@@ -526,7 +536,7 @@ class GUI_Controller :
         self.all_screen_obj.append(file_path_label_label)
 
     def decrypt_screen(self) :
-        topframe = customtkinter.CTkFrame(self.app, width=400, height=74, fg_color="#44AE4E", corner_radius=0)
+        topframe = customtkinter.CTkFrame(self.app, width=400, height=75, fg_color="#44AE4E", corner_radius=0)
         topframe.place(x=0, y=0)
         self.all_screen_obj.append(topframe)
 
@@ -540,8 +550,8 @@ class GUI_Controller :
         applabelname.place(x = 20, y = 20)
         self.all_screen_obj.append(applabelname)
 
-        decrypt_button = customtkinter.CTkButton(self.app, text="🔓 Decrypt File", font=("Arial", 25, "bold"), fg_color="#E34039", hover_color="#75322f", command=self.perform_crypto, height=50, width=325)
-        decrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)    
+        decrypt_button = customtkinter.CTkButton(self.app, text="🔓 Decrypt File", font=("Arial", 25, "bold"), fg_color="#E34039", bg_color="#192E45", hover_color="#75322f", command=self.perform_crypto, height=50, width=325)
+        decrypt_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,30), anchor=tk.CENTER)    
         self.all_screen_obj.append(decrypt_button)
 
         self.password_prompt = customtkinter.CTkEntry(self.app, placeholder_text="E.g. 1234", height=40, width=325, font=("Arial", 20), fg_color="#0F2845", bg_color="#192E45", border_color="#1A1A1A") 
@@ -565,9 +575,9 @@ class GUI_Controller :
         self.all_screen_obj.append(file_path_label_text)
 
     def settings_menu(self) :
-        ## This stuff is taken from the old GUI, nothing has really changed except for some optimizations
+        ## This stuff is taken from the old GUI, nothing has really changed except for minor changes
         ## Top banner
-        banner = customtkinter.CTkFrame(master=app, width=400, height=74, fg_color="#2A4D73", corner_radius=0)
+        banner = customtkinter.CTkFrame(master=app, width=400, height=75, fg_color="#2A4D73", corner_radius=0)
         banner.place(x=0, y=0)
         self.all_screen_obj.append(banner)
 
@@ -581,14 +591,9 @@ class GUI_Controller :
         settings_button.place(x = 290, y = 17)
         self.all_screen_obj.append(settings_button)
 
-        about_button = customtkinter.CTkButton(self.app, text="About", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : messagebox.showinfo("PyQuCryptor: About", about_txt), border_color="#1F6AA5")
-        about_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
-        about_button.place(x=30, y=445)
-        self.all_screen_obj.append(about_button)
-
         ## About thingy
         ## Draws the app logo
-        photo_thingy = customtkinter.CTkLabel(self.app, image=customtkinter.CTkImage(Image.open(logo_path), size=(120, 120)), text='', bg_color='#192E45', fg_color="#192E45", text_color='white', font=("Arial", 25, 'bold'))
+        photo_thingy = customtkinter.CTkLabel(self.app, image=self.app_logo, text='', bg_color='#192E45', fg_color="#192E45", text_color='white', font=("Arial", 25, 'bold'))
         photo_thingy.pack(side=tk.TOP, padx=(0,0), pady=(0,0), anchor=tk.W)
         photo_thingy.place(x=0, y=75)
         self.all_screen_obj.append(photo_thingy)
@@ -596,16 +601,19 @@ class GUI_Controller :
         ## Draws PyQuCryptor with the version
         photo_thingy_label = customtkinter.CTkLabel(self.app, text=f"PyQuCryptor {version}", bg_color='#192E45', text_color='white', font=('Arial', 25, 'bold'))
         photo_thingy_label.pack(side=tk.TOP, padx=(0,0), pady=(0,0), anchor=tk.S)
-        photo_thingy_label.place(x=95, y=125)
+        photo_thingy_label.place(x=95, y=120)
         self.all_screen_obj.append(photo_thingy_label)
 
         ## Build string
-        build_tag = customtkinter.CTkLabel(self.app, text=f"Version: {build_string}", bg_color="#192E45", text_color='white', font=("Arial", 15, 'bold'))
-        build_tag.pack(side=tk.TOP,padx=(0,0), pady=(195,0), anchor=tk.CENTER)
+        build_tag = customtkinter.CTkLabel(self.app, text=f"Build: {build_string}", bg_color="#192E45", text_color='white', font=("Arial", 15, 'bold'))
+        build_tag.pack(side=tk.TOP,padx=(0,0), pady=(190,0), anchor=tk.CENTER)
         self.all_screen_obj.append(build_tag)
 
         ## Setting switches
         config_list = ["Delete Original (ENC)", "Delete Original (DEC)", "Scramble Filename", "Auto Update", ]
+        for conf in config_list :
+            if not conf in user_config :
+                user_config[conf] = config_default[conf]
         config_list_status = []
         for config in config_list :
             if user_config[config] :
@@ -615,11 +623,9 @@ class GUI_Controller :
 
         for index, config in enumerate(config_list) :
             frame = customtkinter.CTkFrame(self.app, width=350, height=50, corner_radius=0, fg_color="#2A4D73")
-            frame.place(x=0, y=220 + index * 55)
-
+            frame.place(x=0, y=215 + index * 55)
             switch = customtkinter.CTkSwitch(frame, text="", command= lambda conf = config: update_setting(conf, not user_config[conf]), variable=config_list_status[index], switch_height=35, switch_width=60, onvalue="on", offvalue="off", progress_color="#44AE4E")
             switch.place(relx=0.90, rely=0.5, anchor=tk.CENTER)
-
             frame_label = customtkinter.CTkLabel(frame, text=config, text_color="white", font=("Arial", 20, "bold"))
             frame_label.place(relx=0.35, rely=0.75, anchor=tk.S)
             ## We need to add them to backwards to delete them in the correct order otherwise an error will happen
@@ -628,28 +634,33 @@ class GUI_Controller :
             self.all_screen_obj.append(frame)
 
         ## Bottom buttons
+        about_button = customtkinter.CTkButton(self.app, text="About", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : messagebox.showinfo("PyQuCryptor: About", about_txt), border_color="#1F6AA5")
+        about_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
+        about_button.place(x=30, y=440)
+        self.all_screen_obj.append(about_button)
+
         github_button = customtkinter.CTkButton(self.app, text="GitHub", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : self.redir_to_site(self.GITHUB_URL), border_color="#1F6AA5")
         github_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
-        github_button.place(x=130, y=445)
+        github_button.place(x=130, y=440)
         self.all_screen_obj.append(github_button)
 
         update_button = customtkinter.CTkButton(self.app, text="Update", width=90, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=check_for_updates, border_color="#1F6AA5")
         update_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
-        update_button.place(x=230, y=445)
+        update_button.place(x=230, y=440)
         self.all_screen_obj.append(update_button)
 
         license_button = customtkinter.CTkButton(self.app, text="License", width=140, font=("Arial", 20, 'bold'), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : messagebox.showinfo("PyQuCryptor: License", license_txt), border_color="#1F6AA5")
         license_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
-        license_button.place(x=30, y=485)
+        license_button.place(x=30, y=480)
         self.all_screen_obj.append(license_button)
 
         other_license_button = customtkinter.CTkButton(self.app, text="Other", width=140, font=("Arial", 20, "bold"), fg_color="#1F6AA5", bg_color="#192E45", command=lambda : messagebox.showinfo("PyQuCryptor: License", other_licenses), border_color="#1F6AA5")
         other_license_button.pack(side=tk.BOTTOM, anchor=tk.CENTER)
-        other_license_button.place(x=180, y=485)
+        other_license_button.place(x=180, y=480)
         self.all_screen_obj.append(other_license_button)
 
         back_button = customtkinter.CTkButton(self.app, text="Back", font=("Arial", 25, "bold"), fg_color="#E34039", bg_color="#192E45", hover_color="#75322f", command=lambda : self.set_screen(self.prev_screen), height=50, width=325, border_color="#1F6AA5")
-        back_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,25), anchor=tk.CENTER)  
+        back_button.pack(side=tk.BOTTOM, padx=(30), pady=(10,30), anchor=tk.CENTER)  
         self.all_screen_obj.append(back_button)
 
     def select_file(self, title, file_etx): 
@@ -685,12 +696,13 @@ class GUI_Controller :
                 except FileNotFoundError :
                     os.rename(file_path, file_path + ".encr")
                 file_path += '.encr'
-                
-        if file_path == "" :
+        
+        ## This  is the input checking part
+        if not file_path :
             error_message = f"Please select the file you want to {mode}."
         elif not os.path.isfile(file_path) : ## Checks to see if the file exsisted 
             error_message = "Unknown file."
-        elif password == "" : ## Checks to see if you got a password
+        elif not password : ## Checks to see if you got a password
             error_message = "Please enter a password."
         elif password.startswith(password[:1]*3) : ## Checks if the first 3 letters are the same b/c strong passwords
             error_message = "Passwords cannot start with 3 of the same characters."
@@ -702,33 +714,33 @@ class GUI_Controller :
         if error_message : # Gives the error message if any
             messagebox.showerror(title=f"PyQuCryptor: {Mode} Error", message=error_message)
         else: # File path + password
-            if mode == "encrypt" : self.file_path_label.delete(0, tk.END)
             self.password_prompt.delete(0, tk.END)
-            cryptor().encrypt_file(password, file_path, user_config["Delete Original (ENC)"], user_config["Scramble Filename"])
+            if mode == "encrypt" :
+                self.file_path_label.delete(0, tk.END)
+                cryptor().encrypt_file(password, file_path, user_config["Delete Original (ENC)"], user_config["Scramble Filename"])
+            else :
+                cryptor().decrypt_file(password, file_path, user_config["Delete Original (ENC)"])
 
 ## This if statement is for multi-threading so that the app doesn't dupe itself
 if __name__ == "__main__" :
     app = customtkinter.CTk()
     try :
-        if user_config["Auto Update"] : 
-            check_for_updates(True)
         ## Sets the app controller to be the app.
         app_controller = GUI_Controller(app=app, start_screen=" 🔒 Encrypt File ")
         ## We check for updates before starting the app
         ## if the user allows for it.
         app.mainloop()
-    
+
     ## Try statement to catch the errors related to corrupted config file
     except KeyError as error :
-        messagebox.showerror("PyQuCryptor: Error", "PyQuCryptor ran into a key error. This is likely with a corrupted config file. The program will now reset its configuration file.")
+        messagebox.showerror("PyQuCryptor: Error", "PyQuCryptor ran into a key error. This is likely with a corrupted config file. The program will now reset its configuration file. No user-action is required.")
         user_config = config_default
-        if user_config["Auto Update"] : 
-            check_for_updates(True)
         app_controller = GUI_Controller(app=app, start_screen=" 🔒 Encrypt File ")
         app.mainloop()
     ## This is added for better debugging and user experience
     except Exception as error :
-        messagebox.showerror("PyQuCryptor: Error", f"PyQuCryptor encountered an unexpected error. Error message: {error}. PyQuCryptor will now close.")
+        if error != "exit" : ## Makes sure that the error is not a exit() call. This is really dumb, exit() is not an exeception, its a call to exit the program. 
+            messagebox.showerror("PyQuCryptor: Error", f"PyQuCryptor encountered an unexpected error. Error message: {error}. PyQuCryptor will now close.")
     
     ## On exit we write the user config back to the config file so that we save the user's settings
     with open(user_config_file_path, 'w') as config_file :
