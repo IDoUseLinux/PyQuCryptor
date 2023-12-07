@@ -9,8 +9,6 @@ customtkinter
 ## Pillow for GUI elements
 pillow
 
-## Some random backend stuff for admin checking, generally the program doesn't need admin rights
-ctypes
 ## Requests for auto-update
 requests
 
