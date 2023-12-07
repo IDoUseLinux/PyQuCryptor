@@ -5,7 +5,7 @@ PyQuCryptor is an encryption software written in Python that is designed to be r
 PyQuCryptor is supposed to be very easy to use and remain relatively secure. AES-256-CTR is the cipher used to encrypt the files. The encryption keys are encrypted with AES-256-CTR again but this time with a key derived from the user generated password. This is a project for the Congressional App Challenge, but unlike **most** people with their apps for the challenge, I actually plan to support this for as long as possible. (This is obviously for my colledge resume.)
 
 # Encryption:
-I chose CTR because I don't have to worry about padding, plus it has authentication, which makes life a bit easier. Technically CTR, GCM, CFB, CBC, and XTS are all quantum resistant to about the same degree but CTR was the easiest to implement and has generally the same security of the other modes except unlike GCM, can encrypt a way bigger file. 
+I chose CTR because I don't have to worry about padding, plus it has tamper resistance (meaning that if somene were to tamper with the file, the data from the bit on would be basically gibberish), which makes life a bit easier. Technically CTR, GCM, CFB, CBC, and XTS are all quantum resistant to about the same degree but CTR was the easiest to implement and has generally the same security of the other modes except unlike GCM, can encrypt a way bigger file. 
 
 # Possible modes of operations/ciphers and why I didn't chose them:
 
