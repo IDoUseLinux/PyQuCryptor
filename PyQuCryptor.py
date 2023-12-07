@@ -451,10 +451,10 @@ class GUI_Controller :
                 user_config["First use"] = False
             else : 
                 messagebox.showinfo("PyQuCryptor: License", "PyQuCryptor will now exit.")
-                exit()
+                raise Exception("exit") ## This is a really janky way of doing exit.
         if user_config["Auto Update"] : 
             check_for_updates(True)
-
+        
         ## Key bind for Enter which performs crypto operations, the lambda function is to prevent
         ## app.bind() sending an argument right up self.perform_crypto's a-- I mean nothing
         self.app.bind("<Return>", lambda event : self.perform_crypto())
@@ -462,6 +462,7 @@ class GUI_Controller :
         ## We set the current screen to the start screen so that prev_screen is not blank b/c if it is it will cause the GUI to not load properly
         self.current_screen = start_screen
         self.set_screen(value=start_screen)
+        self.app.mainloop()
 
     def set_screen(self, value) :
         ## Tries to clear the screen first
@@ -729,17 +730,15 @@ if __name__ == "__main__" :
         app_controller = GUI_Controller(app=app, start_screen=" 🔒 Encrypt File ")
         ## We check for updates before starting the app
         ## if the user allows for it.
-        app.mainloop()
 
     ## Try statement to catch the errors related to corrupted config file
     except KeyError as error :
         messagebox.showerror("PyQuCryptor: Error", "PyQuCryptor ran into a key error. This is likely with a corrupted config file. The program will now reset its configuration file. No user-action is required.")
         user_config = config_default
         app_controller = GUI_Controller(app=app, start_screen=" 🔒 Encrypt File ")
-        app.mainloop()
     ## This is added for better debugging and user experience
     except Exception as error :
-        if error != "exit" : ## Makes sure that the error is not a exit() call. This is really dumb, exit() is not an exeception, its a call to exit the program. 
+        if error.args[0] != "exit" : ## Makes sure that the error is not an exit.
             messagebox.showerror("PyQuCryptor: Error", f"PyQuCryptor encountered an unexpected error. Error message: {error}. PyQuCryptor will now close.")
     
     ## On exit we write the user config back to the config file so that we save the user's settings
