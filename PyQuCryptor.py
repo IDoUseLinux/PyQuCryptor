@@ -16,11 +16,10 @@ from Crypto.Random import get_random_bytes
 ## terrible decision to not use classes and have more global variables
 ## than stars in the universe.
 
-## Since I have no idea how to do version control
-version = "V2.0" ## The actual version of the program. 
-build_string = "Build 2023-12-05.v2-0.main.r032" ## Build string is just for personal tracking, doesn't really mean anything. Just so I can think I did something.
+## Since I have no idea how to do version control this is how I do it
+version = "V2.1" ## The actual version of the program. 
+build_string = "Build 2023-12-05.v2-0.stable.r034" ## Build string is just for personal tracking, doesn't really mean anything. Just so I can think I did something.
 is_dev_version = False ## Change this to False in order for check for updates as this prevents my site from getting DoSed by myself from debugging the amazon rainforest worth of bugs
-has_auto_checked = True
 ## Minor version such as 1.X maintain compatibility with 1.Y, major versions such as 2.X does not work with 1.X
 cryptographic_library_version = "Version 1.1" ## This is the version of the crypto stuff it doesn't have to match the version
 reason = "I honestly have no idea." ## Little easter-egg
@@ -35,7 +34,7 @@ Programming language: Python 3.12
 Made by: Jinghao Li (Backend, frontend, head-developer), Kekoa Dang (Frontend), Zoe Murata (Logo designer)
 License: BSD 3-Clause No Nuclear License 2014 
 Why did we do this: {reason}
-Is Dev Version: {is_dev_version}"""
+Is Dev-Version: {is_dev_version}"""
 
 ## Yes the license is a joke but it is a real license used by Oracle somehow
 license_txt = """\
@@ -671,7 +670,10 @@ class GUI_Controller :
     def redir_to_site(self, url) : 
         webbrowser.open(url)
 
-    def generate_pwd(self, pwd_length=user_config["Gen password length"]) : 
+    def generate_pwd(self,) : 
+        if not "Gen password length" in user_config :
+            user_config["Gen password length"] = config_default["Gen password length"]
+        pwd_length = user_config["Gen password length"] 
         characters = string.ascii_letters + string.digits + string.punctuation
         self.password_prompt.delete(0, tk.END)
         self.password_prompt.insert(0, ''.join(secrets.choice(characters) for _ in range(pwd_length)))
