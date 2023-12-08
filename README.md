@@ -35,5 +35,5 @@ The data inside of the encrypted file is indistinguishable from random, thus pro
 
 PyQuCryptor provides plausible deniability by having "random" data in the entirety of the file. The first 12 bytes is a random salt for the password. Then a 64-byte SHA3-512 hash is encoded in bytes, which makes it also random, and then everything else in the file has been encrypted using AES-256-CTR, which as of currently, cannot be distinguished from randomness. And thus the user can claim that the file is a collection of random bytes, with no actual data inside of it. 
 
-## Virus flags
+# Virus flags
 Since the bootloader that ships default with PyInstaller absolutely sucks at not being flagged by every AV in existence, I have compiled my own (OMG, I can blame the compiler now!!! Next time I will blame the Kernel). This helps in reducing the total amount of flags that gets generated from a script kiddy trying to test out their cool idea. But still, Microsoft Defender and some other AI-based AVs detect my app as malicious, its best to just ignore the positives (Just my app, please listen to other warnings/positives) or to submit them for reanalysis to an actual human. I will upload PyQuCryptor to get analysised by MS with every release, so the majority of the time, PyQuCryptor won't be flagged. 
