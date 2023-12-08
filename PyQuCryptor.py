@@ -18,7 +18,7 @@ from Crypto.Random import get_random_bytes
 
 ## Since I have no idea how to do version control this is how I do it
 version = "V2.1" ## The actual version of the program. 
-build_string = "Build 2023-12-05.v2-0.stable.r034" ## Build string is just for personal tracking, doesn't really mean anything. Just so I can think I did something.
+build_string = "Build 2023-12-05.v2-1.stable.r035" ## Build string is just for personal tracking, doesn't really mean anything. Just so I can think I did something.
 is_dev_version = False ## Change this to False in order for check for updates as this prevents my site from getting DoSed by myself from debugging the amazon rainforest worth of bugs
 ## Minor version such as 1.X maintain compatibility with 1.Y, major versions such as 2.X does not work with 1.X
 cryptographic_library_version = "Version 1.1" ## This is the version of the crypto stuff it doesn't have to match the version
