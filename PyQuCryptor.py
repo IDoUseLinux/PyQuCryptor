@@ -17,11 +17,11 @@ from Crypto.Random import get_random_bytes
 ## than stars in the universe.
 
 ## Since I have no idea how to do version control this is how I do it
-version = "V2.1" ## The actual version of the program. 
-build_string = "Build 2023-12-05.v2-1.stable.r035" ## Build string is just for personal tracking, doesn't really mean anything. Just so I can think I did something.
+version = "V2.2" ## The actual version of the program. 
+build_string = "Build 2023-12-12.v2-2.main.r037" ## Build string is just for personal tracking, doesn't really mean anything. Just so I can think I did something.
 is_dev_version = False ## Change this to False in order for check for updates as this prevents my site from getting DoSed by myself from debugging the amazon rainforest worth of bugs
 ## Minor version such as 1.X maintain compatibility with 1.Y, major versions such as 2.X does not work with 1.X
-cryptographic_library_version = "Version 1.1" ## This is the version of the crypto stuff it doesn't have to match the version
+cryptographic_library_version = "Version 1.2" ## This is the version of the crypto stuff it doesn't have to match the version
 reason = "I honestly have no idea." ## Little easter-egg
 
 ## About dialog text
@@ -134,10 +134,8 @@ class cryptor() :
         except PermissionError :
             request_uac_elevation()
             with open(path_to_file, 'rb') : pass
-        try :
-            if os.stat(path_to_file) > 17179869184 : ## Checks the file to see if its over 16 GiBs b/c weird stuff happens with big files
-                messagebox.showwarning(title="PyQuCryptor: Large File size", message="PyQuCryptor can become unstable when dealing with large file sizes.")
-        except : pass
+        if os.stat(path_to_file) > 17179869184 : ## Checks the file to see if its over 16 GiBs b/c weird stuff happens with big files
+            messagebox.showwarning(title="PyQuCryptor: Large File size", message="PyQuCryptor can become unstable when dealing with large file sizes.")
         basename = os.path.basename(path_to_file)
 
         ## Its just easier to scramble the file name first and then encrypt it
@@ -397,7 +395,7 @@ def secure_erase(file_path) :
 def check_for_updates(auto=False) :
     if not is_dev_version :
         try :
-            if str(requests.get("https://randomperson.net/pyqucryptor/eol.txt")) != "<Response [404]>" :
+            if str(requests.get("https://randomperson.net/pyqucryptor/eol.txt", timeout=5)) != "<Response [404]>" :
                 messagebox.showwarning("PyQuCryptor: End of Life", "PyQuCryptor is no longer supported! Thanks for using the software though!")
             
             web_latest = requests.get(f"https://randomperson.net/pyqucryptor/newest", timeout=5).content.decode('utf-8') ## We get using the newest version
@@ -433,11 +431,11 @@ class GUI_Controller :
     selectmode = None
     app_logo = customtkinter.CTkImage(Image.open(logo_path), size=(120, 120))
 
-    def __init__(self, app, start_screen) :        
+    def __init__(self, app, start_screen) :
         self.app = app
         self.app.iconbitmap(resource_path("resources/PyQuCryptorv4.ico"))
 
-        self.app.resizable(False, False) ## makes it unable to resize the app
+        self.app.resizable(False, False) ## Makes it unable to resize the app
         self.app.title("PyQuCryptor") 
         self.app.geometry("350x600")
         customtkinter.set_appearance_mode("dark")
