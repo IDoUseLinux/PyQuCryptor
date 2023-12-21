@@ -39,7 +39,8 @@ Is Dev-Version: {is_dev_version}"""
 ## Yes the license is a joke but it is a real license used by Oracle somehow
 license_txt = """\
 BSD 3-Clause No Nuclear License 2014
-© 2023 IDoUseLinux/Jinghao Li (https://randomperson.net/), SmashTheCoder1/Kekoa Dang
+
+© 2024 IDoUseLinux/Jinghao Li (https://randomperson.net/), SmashTheCoder1/Kekoa Dang
 The use of this software is subject to license terms.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
