@@ -1,5 +1,5 @@
 # PyQuCryptor
-PyQuCryptor is an encryption software written in Python that is designed to be resistant to post-quantum cryptoanalysis. This app somehow ranked 3rd in the congressional app challenge and lost to 2 (Yes, 2 as in 1 + 1) app written in scratch. This app follows the KISS philosphy, Keep It Simple, (because I'm) Stupid.
+PyQuCryptor is an encryption software written in Python that is designed to be resistant to post-quantum cryptoanalysis. This app follows the KISS philosphy, Keep It Simple, (because I'm) Stupid. This app is a submission for the Congressional App Challenge (ranked 3rd in HI-01), and the RISE Global Challenge.
 
 # TL;DR
 PyQuCryptor is supposed to be very easy to use and remain relatively secure. AES-256-CTR is the cipher used to encrypt the files. The encryption keys are encrypted with AES-256-CTR again but this time with a key derived from the user generated password. This is a project for the Congressional App Challenge, but unlike **most** people with their apps for the challenge, I actually plan to support this for as long as possible. (This is obviously for my colledge resume.)
