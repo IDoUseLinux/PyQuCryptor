@@ -31,7 +31,7 @@ PyQuCryptor {build_string}
 Cryptographic version: {cryptographic_library_version}
 Date of programming: {build_string[6:16]}
 Programming language: Python 3.12
-Made by: Jinghao Li (Backend, frontend, head-developer), Kekoa Dang (Frontend), Zoe Murata (Logo designer)
+Made by: Jinghao Li
 License: BSD 3-Clause No Nuclear License 2014 
 Why did we do this: {reason}
 Is Dev-Version: {is_dev_version}"""
@@ -40,7 +40,7 @@ Is Dev-Version: {is_dev_version}"""
 license_txt = """\
 BSD 3-Clause No Nuclear License 2014
 
-© 2024 IDoUseLinux/Jinghao Li (https://randomperson.net/), SmashTheCoder1/Kekoa Dang
+© 2024 IDoUseLinux/Jinghao Li (https://randomperson.net/)
 The use of this software is subject to license terms.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -342,7 +342,7 @@ class cryptor() :
                         os.remove(str.replace(path_to_file, ".encr", '')) ## I dont think we have to secure erase this b/c in theory its not related to encrypted data
                     else : __ = True ## I just need a variable name
                         
-                except FileNotFoundError : pass ## Incase anyone deletes the encrypted file during encryption
+                except FileNotFoundError : pass ## Incase anyone deletes the encrypted file during encryption for some dumb reason, idk why I even added this LOL
                 except Exception : os.remove(path_to_file + '.temp') ## Deletes the temp file if anything goes wrong
 
                 if __ :
