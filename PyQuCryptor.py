@@ -67,7 +67,7 @@ def resource_path(relative_path):
 with open(resource_path("resources/other_licenses.txt"), 'r') as license_file:
     other_licenses = license_file.read()
 
-## Get's user's home dir so we can store configs in the user's home folder
+## Gets user's home dir so we can store configs in the user's home folder just to be **extra** annoying
 user_config_file_path =  os.path.expanduser("~") + "/pyqucryptor.json"
 
 logo_path = resource_path('resources/PyQuCryptorv4.png')
@@ -120,7 +120,9 @@ def request_uac_elevation() :
         return True
 
 class cryptor() :
-
+    ## For the love of god please do not try to touch this, this will break something almost 99% of the time, just give up.
+    ## Increase this counter to count how many hours wasted in trying to unfu-- fix the encryption
+    ## timeWasted = 3
     def __init__(self) -> None : ## IDK what this is for lmao I used the auto-generated thingy
         pass
 
@@ -334,7 +336,7 @@ class cryptor() :
                     ____ = os.path.basename(path_to_file) ## Again I need a variable name
                     messagebox.showerror(title="Decrypt Error", message=f"Unable to rename file (Is the file just called .encr?), file renamed to {____ + '.temp'}")
             
-            __ = False ## I just need a variable name
+            __ = False ## I just need a variable name, but basically this "thing" would be used to delete the .temp file
             if delete_og_file :
                 try :
                     open(str.replace(path_to_file, ".encr", ''), 'r')
