@@ -137,7 +137,7 @@ class cryptor() :
         except PermissionError :
             request_uac_elevation()
             with open(path_to_file, 'rb') : pass
-        if os.stat(path_to_file) > 17179869184 : ## Checks the file to see if its over 16 GiBs b/c weird stuff happens with big files
+        if os.stat(path_to_file).st_size > 17179869184 : ## Checks the file to see if its over 16 GiBs b/c weird stuff happens with big files
             messagebox.showwarning(title="PyQuCryptor: Large File size", message="PyQuCryptor can become unstable when dealing with large file sizes.")
         basename = os.path.basename(path_to_file)
 
