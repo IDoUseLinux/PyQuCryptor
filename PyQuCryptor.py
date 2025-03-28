@@ -19,7 +19,7 @@ from Crypto.Random import get_random_bytes
 ## Since I have no idea how to do version control this is how I do it
 version = "V2.2" ## The actual version of the program. 
 build_string = "Build 2023-12-12.v2-2.main.r037" ## Build string is just for personal tracking, doesn't really mean anything. Just so I can think I did something.
-is_dev_version = False ## Change this to False in order for check for updates as this prevents my site from getting DoSed by myself from debugging the amazon rainforest worth of bugs
+is_dev_version = True ## Change this to False in order for check for updates as this prevents my site from getting DoSed by myself from debugging the amazon rainforest worth of bugs
 ## Minor version such as 1.X maintain compatibility with 1.Y, major versions such as 2.X does not work with 1.X
 cryptographic_library_version = "Version 1.2" ## This is the version of the crypto stuff it doesn't have to match the version
 reason = "I honestly have no idea." ## Little easter-egg
@@ -31,7 +31,7 @@ PyQuCryptor {build_string}
 Cryptographic version: {cryptographic_library_version}
 Date of programming: {build_string[6:16]}
 Programming language: Python 3.12
-Made by: Jinghao Li
+Made by: IDoUseLinux
 License: BSD 3-Clause No Nuclear License 2014 
 Why did we do this: {reason}
 Is Dev-Version: {is_dev_version}"""
@@ -40,7 +40,7 @@ Is Dev-Version: {is_dev_version}"""
 license_txt = """\
 BSD 3-Clause No Nuclear License 2014
 
-© 2024 IDoUseLinux/Jinghao Li (https://randomperson.net/)
+© 2024 IDoUseLinux (https://randomperson.net/)
 The use of this software is subject to license terms.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -101,6 +101,7 @@ def is_admin() :
     except:
         is_user_admin = False
         return False
+
 ## For the like 1 other person that will ever see this program
 ## This segment of code requests for admin privileges.
 def request_uac_elevation() :
@@ -241,7 +242,7 @@ class cryptor() :
         nonEncList = []
         encryptedList = []
         try :
-            if os.stat(path_to_file) > 17179869184 : ## Warns the user about large file sizes
+            if os.stat(path_to_file) > 17179869184 : ## Warns the user about large file sizes, ~16 GiB weird stuff happens
                 messagebox.showwarning(title="PyQuCryptor: Large File size", message="PyQuCryptor can become unstable when dealing with large file sizes.")
         except : pass
 
@@ -413,7 +414,7 @@ def check_for_updates(auto=False) :
             messagebox.showerror("PyQuCryptor: Updates", f"Error whilst trying to fetch updates! Error message: {error}")
     else : 
         if not auto :
-            messagebox.showinfo("PyQuCryptor: Updates", "This is a development build. It does not check for updates for the sakes of my personal website not being DoSed by myself. This can be disabled by setting the is_dev_version variable to False")
+            messagebox.showinfo("PyQuCryptor: Updates", "This is a development build. It does not check for updates for the sakes of my personal website not being DoSed by myself. This can be disabled by setting the `is_dev_version` variable to False")
 
 ## This is easier to do versus a complex lambda expression
 def update_setting(key, value) :
